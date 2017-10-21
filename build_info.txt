@@ -1,0 +1,16 @@
+docker installieren
+
+dann in den pfad gehen, frontend und backend:
+docker build -t repflow-backend . UND
+docker build -t repflow-frontend .
+
+dann:
+docker run -p 3000:3000 repflow-backend UND
+docker run -p 4200:4200 repflow-frontend
+
+am schluss:
+docker ps
+
+und beide mit
+docker stop name1 UND
+docker stop name2 beenden

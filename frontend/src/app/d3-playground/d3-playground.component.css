@@ -1,0 +1,14 @@
+app-options-panel{
+    width:18%;
+    float:left;
+}
+
+#sankey{
+    width:82%;
+    float:right;
+
+    margin-top:8px;
+    overflow:visible;
+
+}
+

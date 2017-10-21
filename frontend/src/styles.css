@@ -1,0 +1,41 @@
+/* You can add global styles to this file, and also import other style files */
+html {
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin:0;
+}
+
+nav {
+    padding:8px;
+    margin-bottom:8px;
+    background-color:gray;
+}
+
+nav a{
+    color:white;
+}
+
+.button {
+    font-family: Arial, sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size:13px;
+
+    color: #fff;
+
+    background-color: #0e83cd;
+
+    cursor: pointer;
+
+    padding: 8px 15px;
+    display: inline-block;
+
+    outline: none;
+    position: relative;
+
+    -webkit-transition: all 0.3s;
+    -moz-transition: all 0.3s;
+    transition: all 0.3s;
+}
