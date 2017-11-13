@@ -1,0 +1,15 @@
+#trend-chart{
+    float:right;
+    width:80%;
+}
+
+app-options-panel{
+    width:18%;
+    float:left;
+
+    position:absolute;
+    top: 34px;
+    bottom:0;
+
+    border-right:dashed 1px black;
+}
