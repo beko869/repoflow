@@ -9,11 +9,18 @@ body {
 
 nav {
     padding:8px;
-    margin-bottom:8px;
-    background-color:gray;
+    background-color:#0e83cd;
 }
 
 nav a{
+    color:white;
+}
+
+nav .nav-label{
+    float:right;
+    display:inline-block;
+
+    font-weight:bold;
     color:white;
 }
 

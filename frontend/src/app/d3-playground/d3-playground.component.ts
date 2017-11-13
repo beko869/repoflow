@@ -182,7 +182,9 @@ export class D3PlaygroundComponent implements OnInit {
                 .attr('x', function (d) {
                     return d.x0;
                 })
-                .attr('y', function (d) {
+                .attr('y', (d) => {
+                    //console.log( this.height - (this.height * d.quality) );
+                    //return this.height - (this.height * d.quality);
                     return d.y0;
                 })
                 .attr('height', function (d) {

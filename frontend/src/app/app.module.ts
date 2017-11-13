@@ -5,12 +5,14 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { D3PlaygroundComponent } from './d3-playground/d3-playground.component';
 import { OptionsPanelComponent } from './options-panel/options-panel.component';
+import { TrendChartComponent } from './trend-chart/trend-chart.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     D3PlaygroundComponent,
-    OptionsPanelComponent
+    OptionsPanelComponent,
+    TrendChartComponent
   ],
   imports: [
     BrowserModule,
@@ -18,6 +20,10 @@ import { OptionsPanelComponent } from './options-panel/options-panel.component';
         {
           path: 'playground',
           component: D3PlaygroundComponent
+        },
+        {
+          path: 'trend',
+          component: TrendChartComponent
         }
     ])
   ],

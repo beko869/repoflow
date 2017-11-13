@@ -2,6 +2,21 @@
     padding:8px;
 }
 
+.search-input-group
+{
+    margin-top:8px;
+}
+
+.search-input-group label
+{
+    display:block;
+    width:100%;
+    margin-bottom:3px;
+
+    font-style:italic;
+
+}
+
 .active{
     color: #0e83cd !important;
     background: #fff !important;
