@@ -105,6 +105,57 @@ router.get('/0', function (req, res, next) {
 
 /* GET mocked file data. */
 router.get('/1', function (req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(JSON.stringify(
+        {
+            "commit-nodes": [
+                {"id":1,"name": "Commit 1", "color": "blue", "datetime": "2017-11-13T09:29:29", "quality": 0.4, "quality2":0.9},
+                {"id":2,"name": "Commit 2", "color": "chocolate", "datetime": "2017-11-14T09:29:29", "quality": 0.1, "quality2":0.6},
+                {"id":3,"name": "Commit 3", "color": "brown", "datetime": "2017-11-15T09:29:29", "quality": 0.2, "quality2":0.9},
+                {"id":4,"name": "Commit 4", "color": "darkmagenta", "datetime": "2017-11-16T09:29:29", "quality": 0.4, "quality2":0.6},
+                {"id":5,"name": "Commit 5", "color": "chocolate", "datetime": "2017-11-17T09:29:29", "quality": 0.6, "quality2":0.6},
+                {"id":6,"name": "Commit 6", "color": "darkmagenta", "datetime": "2017-11-18T09:29:29", "quality": 0.7, "quality2":0.6},
+                {"id":7,"name": "Commit 7", "color": "blue", "datetime": "2017-11-20T09:29:29", "quality": 0.1, "quality2":0.9},
+                {"id":8,"name": "Commit 8", "color": "darkmagenta", "datetime": "2017-11-22T09:29:29", "quality": 0.3, "quality2":0.3},
+                {"id":9,"name": "Commit 9", "color": "blue", "datetime": "2017-11-23T09:29:29", "quality": 0.6, "quality2":0.6},
+                {"id":10,"name": "Commit 10", "color": "blue", "datetime": "2017-11-24T09:29:29", "quality": 0.7, "quality2":0.6},
+                {"id":11,"name": "Commit 11", "color": "chocolate", "datetime": "2017-12-01T09:29:29", "quality": 0.8, "quality2":0.9},
+                {"id":12,"name": "Commit 12", "color": "brown", "datetime": "2017-12-02T09:29:29", "quality": 0.9, "quality2":0.9},
+                {"id":13,"name": "Commit 13", "color": "blue", "datetime": "2017-12-03T09:29:29", "quality": 0.92, "quality2":0.3},
+                {"id":14,"name": "Commit 14", "color": "darkmagenta", "datetime": "2017-12-06T09:29:29", "quality": 0.94, "quality2":0.6},
+                {"id":15,"name": "Commit 15", "color": "blue", "datetime": "2017-12-10T09:29:29", "quality": 0.95, "quality2":0.3},
+                {"id":16,"name": "Commit 16", "color": "blue", "datetime": "2017-12-13T09:29:29", "quality": 0.95, "quality2":0.3}
+            ],
+            "file-links": [
+                {
+                    "links":[
+                        {"name": "file_1", "commitId": 0 },
+                        {"name": "file_1", "commitId": 1 },
+                        {"name": "file_1", "commitId": 2 },
+                        {"name": "file_1", "commitId": 3 },
+                        {"name": "file_1", "commitId": 4 },
+                        {"name": "file_1", "commitId": 5 },
+                        {"name": "file_1", "commitId": 6 },
+                        {"name": "file_1", "commitId": 7 },
+                        {"name": "file_1", "commitId": 8 },
+                        {"name": "file_1", "commitId": 9 },
+                        {"name": "file_1", "commitId": 10 },
+                        {"name": "file_1", "commitId": 11 },
+                        {"name": "file_1", "commitId": 12 },
+                        {"name": "file_1", "commitId": 13 },
+                        {"name": "file_1", "commitId": 14 },
+                        {"name": "file_1", "commitId": 15 }
+                    ],
+                    "color":"blue"
+                }
+            ]
+        }
+    ));
+});
+
+/* GET commit view data. */
+router.get('/2', function (req, res, next) {
     nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
         .then(function(repo) {
             return repo.getMasterCommit();
@@ -125,8 +176,8 @@ router.get('/1', function (req, res, next) {
         .done();
 });
 
-/* GET mocked file data. */
-router.get('/2', function (req, res, next) {
+/* GET file view data. */
+router.get('/3', function (req, res, next) {
     nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
         .then(function(repo) {
             return repo.getMasterCommit();
