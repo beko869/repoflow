@@ -10,11 +10,13 @@ import * as d3TimeFormat from 'd3-time-format';
 import * as d3Shape from 'd3-shape';
 import * as d3Request from 'd3-request';
 import {environment} from "../../environments/environment";
+import {UtilityService} from '../shared/UtilityService';
 
 @Component({
     selector: 'app-trend-chart',
     templateUrl: './trend-chart.component.html',
-    styleUrls: ['./trend-chart.component.css']
+    styleUrls: ['./trend-chart.component.css'],
+    providers: [UtilityService]
 })
 
 export class TrendChartComponent implements OnInit {
@@ -29,7 +31,7 @@ export class TrendChartComponent implements OnInit {
     private trendVisualizationWrapper: any;
     private optionsPanel: OptionsPanelComponent;
 
-    constructor() {
+    constructor( private utility: UtilityService ) {
         this.margin = {top:20, right:100, bottom:60, left:30};
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
@@ -114,12 +116,12 @@ export class TrendChartComponent implements OnInit {
         .attr('x', (d)=>{ return this.xScale( new Date(d.datetime) ) })
         .attr('y', (d)=>{ return this.yScale( d.quality*100 ) })
         .attr('width', 10)
-        .attr('height', 10)
-        .attr('fill', 'teal')
-        .attr('width', 10)
         .attr('height', 50)
         .attr('fill', 'teal')
-            .attr('transform','translate(0,-25)');
+        .attr('width', 10)
+        .attr('height', (d)=>{ return d.quality2*150 })
+        .attr('fill', 'teal')
+            .attr('transform', (d)=>{ return 'translate(0,-' + (d.quality2*150/2) + ')' });
     }
 
     /**
@@ -134,6 +136,9 @@ export class TrendChartComponent implements OnInit {
             .x((d)=>{ return d[ 'x' ] })
             .y((d)=>{ return d[ 'y' ] });
 
+        let controlFileLinkRenderHeightArray = [];
+
+
         //iterating through every set of filepaths
         paraFileLinksData.forEach( (filePath,i)=>{
             let fileLinkArray = [];
@@ -141,12 +146,15 @@ export class TrendChartComponent implements OnInit {
             //iterating through every commit the file passed and retrieving scaled x and y coordinates
             filePath.links.forEach( (fileLink)=>{
 
+                controlFileLinkRenderHeightArray.push(fileLink.commitId);
+
                 fileLinkArray.push(
                     {
                         "x": this.xScale( new Date(paraCommitNodesData[fileLink.commitId].datetime) ),
-                        "y": this.yScale( paraCommitNodesData[fileLink.commitId].quality * 100 - i )
+                        "y": this.yScale( paraCommitNodesData[fileLink.commitId].quality * 100 - this.utility.getCounterForValueInArray( fileLink.commitId, controlFileLinkRenderHeightArray ) )
                     }
                 );
+
             } );
 
             this.trendVisualizationWrapper
