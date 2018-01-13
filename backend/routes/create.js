@@ -3,6 +3,7 @@ var path = require('path');
 var nodegit = require('nodegit');
 var nodegitKit = require('nodegit-kit');
 var Database = require('arangojs');
+var Promise = require('bluebird');
 var router = express.Router();
 
 /* GET create data listing. */
@@ -11,52 +12,95 @@ router.get('/', function (req, res, next) {
 });
 
 /* PUT repository data in db. */
-router.put('/', function (req, res, next) {
-
-    /**
-     * 1) build commits in json with following structure: commit_nodes: [ {id,name,color,datetime,quality} ]
-     * 2) build file links in json with following structure: file_links: [ {links:[name,commitId],color} ]
-     */
-});
-
 router.put('/database', function (req, res, next) {
     nodegitKit.open(path.resolve(__dirname, "../../.git"))
         .then(function(repo){
             return nodegitKit.log(repo, { sort: 'reverse' })
                 .then(function(history){
+                    //get commit data
                     //step in commit history
-                    var diffPromiseArray = [];
+                    var dataPromiseArray = [];
                     for( var i = 1; i<history.length; i++ ){
-                        //promise function that gets the file difference from one commit to the next
-                        //difference is an array with filename and status (modified,deleted,added)
-                        var diffPromise = nodegitKit.diff( repo, history[i-1].commit, history[i].commit )
+
+                        //promise function that gets the file data difference from one commit to the next
+                        //returns an array with filename and status (modified,deleted,added)
+                        var fileDataPromise = nodegitKit.diff( repo, history[i-1].commit, history[i].commit )
                             .then( function(diff){
                                 //put all file differences in an array
-                                var fileArray = [];
+                                var fileDataArray = [];
                                 for( var j=0; j<diff.length;j++ ) {
-                                    fileArray.push( {"status":diff[j].status,"path":diff[j].path,"commit_sha":diff[j].sha} )
+                                    fileDataArray.push( {"status":diff[j].status,"path":diff[j].path} )
                                 }
-                                //return the array with file differences
-                                return fileArray;
+                                return fileDataArray;
                             });
-                        //push the promise to the promise array
-                        diffPromiseArray.push( diffPromise );
+
+                        //data object that holds commit information
+                        var commitDataObject = {
+                            "date":history[i].date,
+                            "message":history[i].message,
+                            "author":history[i].author.name,
+                            "commit_sha":history[i].commit
+
+                        };
+
+                        //push the file and commit data to the promise array
+                        dataPromiseArray.push( { "commit":commitDataObject, "files":fileDataPromise } );
                     }
-                    //resolve the promise array and return the values
-                    return Promise.all( diffPromiseArray ).then( function(values){
-                        return values;
+
+                    //resolve the data promise array that holds commit and file data
+                    return Promise.map( dataPromiseArray, function( values ){
+                        return Promise.props( values );
                     });
                 })
-                .then(function(filediff){
-                    //log the filediff to the console
-                    console.log(filediff);
-
-                    //TODO: hier fortsetzen mit Datenbank inserts
+                .then(function( commitDataArray ){
+                    //put commit data into database
+                    //TODO: konfigurierbar machen
                     var db = new Database( {url:'http://root:Nenya123@127.0.0.1:8529'} );
-
                     db.useDatabase('repoflow');
                     db.useBasicAuth('root','Nenya123');
-                    db.query("INSERT { status: @status, path:@path} IN commit RETURN NEW",{status: 'asdf', path: 'asdf/asdf'});
+
+                    for( var i = 0; i<commitDataArray.length; i++ ){
+                        //insert commit data
+                        db.query(
+                            "INSERT " +
+                            "   {   id:@sha, " +
+                            "       name:@message, " +
+                            "       color:@color, " +
+                            "       datetime:@datetime, " +
+                            "       quality:@quality, " +
+                            "       quality2:@quality2," +
+                            "       author:@author" +
+                            "   } " +
+                            "IN commit " +
+                            "RETURN NEW",
+                            {   sha: commitDataArray[i].commit.commit_sha,
+                                message: commitDataArray[i].commit.message,
+                                color: "blue",
+                                datetime: commitDataArray[i].commit.date,
+                                quality: Math.random(),
+                                quality2: Math.random(),
+                                author: commitDataArray[i].commit.author
+                            });
+
+                        var fileArray = commitDataArray[i].files;
+
+                        for( var j = 0; j<fileArray.length; j++ ){
+                            //insert file data
+                            db.query(
+                                "INSERT " +
+                                "   {   name:@name," +
+                                "       commitId:@sha," +
+                                "       status:@status " +
+                                "   } " +
+                                "IN file " +
+                                "RETURN NEW",
+                                {   name: fileArray[j].path,
+                                    sha: commitDataArray[i].commit.commit_sha,
+                                    status: fileArray[j].status
+                                });
+                        }
+                    }
+                    res.send( commitDataArray );
                 });
         });
 });
