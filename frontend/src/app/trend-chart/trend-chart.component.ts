@@ -29,6 +29,7 @@ export class TrendChartComponent implements OnInit {
     private yAxis: any;
     private xAxis: any;
     private trendVisualizationWrapper: any;
+    private tooltip: any;
     private optionsPanel: OptionsPanelComponent;
 
     constructor( private utility: UtilityService ) {
@@ -39,10 +40,11 @@ export class TrendChartComponent implements OnInit {
     }
 
     ngOnInit() {
-        d3Request.json(environment.dataHost + 'mock_data/0', (error, data) => {
+        d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
             this.initSvg();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
+            this.initTooltip();
 
             this.renderAxis();
         });
@@ -53,7 +55,7 @@ export class TrendChartComponent implements OnInit {
     public doCommitViewRequestAndRender() {
         this.clearFileView();
 
-        d3Request.json(environment.dataHost + 'mock_data/0', (error, data) => {
+        d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
             this.renderCommitView( data );
         });
     }
@@ -68,7 +70,8 @@ export class TrendChartComponent implements OnInit {
 
     public renderCommitView( paraData: any ): void {
         this.renderCommitViewNodes( paraData["commit-nodes"] );
-        this.renderCommitViewFileLinks( paraData["commit-nodes"], paraData["file-links"] )
+        this.renderCommitViewLinks( paraData["commit-nodes"] );
+        //this.renderCommitViewFileLinks( paraData["commit-nodes"], paraData["file-links"] )
     }
 
     public renderFileView( paraData: any ): void {
@@ -110,12 +113,12 @@ export class TrendChartComponent implements OnInit {
         //define y scale from 1 to 100 (percent representation for quality)
         this.yScale = d3Scale.scaleLinear()
             .domain([0, 100])
-            .range([this.height, 0]);
+            .range( [this.height, 0] );
 
         //define x scale as time scale and map it to min and max date from repository data
         this.xScale = d3Scale.scaleTime()
             .domain( d3Array.extent( paraCommitNodesData, function( d ){ return new Date(d.datetime) }) )
-            .range([0, this.width]);
+            .range( [0, this.width] );
     }
 
     /**
@@ -125,6 +128,23 @@ export class TrendChartComponent implements OnInit {
         //set axis with defined scales
         this.yAxis = d3Axis.axisRight(this.yScale);
         this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%dT%H:%M:%S"));
+    }
+
+    public initTooltip(): void {
+        //set Tooltip
+        this.tooltip = d3Selection.select("#trend-chart").append("div")
+            .attr("class","tooltip")
+            .style("opacity",0)
+    }
+
+    public fadeInTooltip( paraTooltipContent: any ): void {
+        this.tooltip.transition().duration(200).style("opacity",0.9);
+        this.tooltip.html( paraTooltipContent ).style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+    }
+
+    public fadeOutTooltip(): void {
+        this.tooltip.transition().duration(500).style("opacity",0);
     }
 
     /**
@@ -147,21 +167,69 @@ export class TrendChartComponent implements OnInit {
      * renders the commit nodes retrieved from the backend
      */
     public renderCommitViewNodes( paraCommitNodesData: any ): void {
+
         this.trendVisualizationWrapper.append('g').selectAll('rect')
         .data(paraCommitNodesData)
         .enter()
-        .append('rect')
+        .append('circle')
         .attr('class','commit-view-node')
-        .attr('x', (d)=>{ return this.xScale( new Date(d.datetime) ) })
-        .attr('y', (d)=>{ return this.yScale( d.quality*100 ) })
-        .attr('width', 10)
-        .attr('height', 50)
+        .attr('cx', (d)=>{ return this.xScale( new Date(d.datetime) ) })
+        .attr('cy', (d)=>{ return this.yScale( d.quality*100 ) })
+        //.attr('width', 10)
+        //.attr('height', 50)
         .attr('fill', 'teal')
-        .attr('width', 10)
-        .attr('height', (d)=>{ return d.quality2*150 })
+        //.attr('width', 10)
+        .attr('r', (d)=>{ return d.fileCount*3 })
         .attr('fill', 'teal')
-            .attr('transform', (d)=>{ return 'translate(0,-' + (d.quality2*150/2) + ')' });
+            .on("mouseover", (d) => {
+                console.log(d.id);
+                this.fadeInTooltip( d.id );
+            })
+            .on("mouseout",(d)=>{
+                this.fadeOutTooltip();
+            });
     }
+
+    /**
+     * renders links based on the order of commits
+     * @param paraCommitNodesData commit data as array from the backend
+     * @param paraFileLinksData file path data as array from the backend
+     */
+    public renderCommitViewLinks( paraCommitNodesData: any ): void {
+        //d3 line generator
+        const line = d3Shape.line()
+            .x((d)=>{ return d[ 'x' ] })
+            .y((d)=>{ return d[ 'y' ] })
+            .curve(d3Shape.curveMonotoneX);
+
+
+        let commitLinkArray = [];
+        let dateCompare = this.utility.commitDatetimeComparer;
+        let commitNodesSortedByDatetime = paraCommitNodesData.sort( dateCompare );
+
+        commitNodesSortedByDatetime.forEach( (commitNode,i)=>{
+            commitLinkArray.push({
+                "x": this.xScale( new Date(commitNode.datetime) ),
+                "y": this.yScale( commitNode.quality*100 )
+            });
+        });
+
+        this.trendVisualizationWrapper
+            .append('path')
+            .datum(commitLinkArray)
+            .attr('class','commit-view-link')
+            .attr("fill", "none")
+            .attr("stroke", 'red')
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-linecap", "round")
+            .attr("stroke-width", 3)
+            .attr("d", line);
+
+    }
+
+
+
+
 
     /**
      * renders links based on the files paths through commits
@@ -169,7 +237,7 @@ export class TrendChartComponent implements OnInit {
      * @param paraFileLinksData file path data as array from the backend
      */
     public renderCommitViewFileLinks( paraCommitNodesData: any, paraFileLinksData: any ): void {
-
+        //TODO currently deprecated as it makes little sense in commits with a huge file count to display them all as a link
         //d3 line generator
         const line = d3Shape.line()
             .x((d)=>{ return d[ 'x' ] })
@@ -177,20 +245,74 @@ export class TrendChartComponent implements OnInit {
 
         let controlFileLinkRenderHeightArray = [];
 
+        console.log("fileLinksData",paraFileLinksData);
 
         //iterating through every set of filepaths
         paraFileLinksData.forEach( (filePath,i)=>{
-            let fileLinkArray = [];
+            for( let i=0; i<filePath.links.length-1; i++ ){
 
-            //iterating through every commit the file passed and retrieving scaled x and y coordinates
-            filePath.links.forEach( (fileLink)=>{
+                let fileLinkArray = [];
+                controlFileLinkRenderHeightArray.push(filePath.links[i].commitId);
 
-                controlFileLinkRenderHeightArray.push(fileLink.commitId);
+                let lookup = this.utility.createIDLookupForArray( paraCommitNodesData );
+
 
                 fileLinkArray.push(
                     {
-                        "x": this.xScale( new Date(paraCommitNodesData[fileLink.commitId].datetime) ),
-                        "y": this.yScale( paraCommitNodesData[fileLink.commitId].quality * 100 - this.utility.getCounterForValueInArray( fileLink.commitId, controlFileLinkRenderHeightArray ) )
+                        "x": this.xScale( new Date(lookup[filePath.links[i].commitId].datetime) ),
+                        "y": this.yScale( lookup[filePath.links[i].commitId].quality * 100 - this.utility.getCounterForValueInArray( filePath.links[i].commitId, controlFileLinkRenderHeightArray ) ),
+                        "commitId": filePath.links[i].commitId,
+                        "fileName": filePath.links[i].name
+                    }
+                );
+
+                fileLinkArray.push(
+                    {
+                        "x": this.xScale( new Date(lookup[filePath.links[i+1].commitId].datetime) ),
+                        "y": this.yScale( lookup[filePath.links[i+1].commitId].quality * 100 - this.utility.getCounterForValueInArray( filePath.links[i+1].commitId, controlFileLinkRenderHeightArray ) ),
+                        "commitId": filePath.links[i+1].commitId,
+                        "fileName": filePath.links[i+1].name
+                    }
+                );
+
+                console.log("fileLinksArray",fileLinkArray);
+
+                this.trendVisualizationWrapper
+                    .append('path')
+                    .datum(fileLinkArray)
+                    .attr('class','commit-view-link')
+                    .attr("fill", "none")
+                    .attr("stroke", filePath.color)
+                    .attr("stroke-linejoin", "round")
+                    .attr("stroke-linecap", "round")
+                    .attr("stroke-width", 3)
+                    .attr("d", line)
+                    .on("mouseover", (d) => {
+
+                        console.log(d[0].fileName + " goes from " + d[0].commitId.substring(0,7) + " to " + d[1].commitId.substring(0,7));
+                        this.fadeInTooltip( d[0].fileName + " goes from " + d[0].commitId.substring(0,7) + " to " + d[1].commitId.substring(0,7));
+                    })
+                    .on("mouseout",(d)=>{
+                        this.fadeOutTooltip();
+                    });
+
+                fileLinkArray = [];
+
+            }
+
+
+            //iterating through every commit the file passed and retrieving scaled x and y coordinates
+            /*filePath.links.forEach( (fileLink)=>{
+
+                controlFileLinkRenderHeightArray.push(fileLink.commitId);
+
+                var lookup = this.utility.createIDLookupForArray( paraCommitNodesData );
+
+                fileLinkArray.push(
+                    {
+                        "x": this.xScale( new Date(lookup[fileLink.commitId].datetime) ),
+                        "y": this.yScale( lookup[fileLink.commitId].quality * 100 - this.utility.getCounterForValueInArray( fileLink.commitId, controlFileLinkRenderHeightArray ) ),
+                        "commitId": fileLink.commitId
                     }
                 );
 
@@ -205,7 +327,13 @@ export class TrendChartComponent implements OnInit {
                 .attr("stroke-linejoin", "round")
                 .attr("stroke-linecap", "round")
                 .attr("stroke-width", 1.5)
-                .attr("d", line);
+                .attr("d", line)
+                .on("mouseover", (d) => {
+                    this.fadeInTooltip( '' );
+                })
+                .on("mouseout",(d)=>{
+                    this.fadeOutTooltip();
+                });*/
         } );
     }
 
@@ -248,10 +376,12 @@ export class TrendChartComponent implements OnInit {
             //iterating through every commit the file passed and retrieving scaled x and y coordinates
             filePath.links.forEach( (fileLink)=>{
 
+                var lookup = this.utility.createIDLookupForArray( paraCommitNodesData );
+
                 fileLinkArray.push(
                     {
-                        "x": this.xScale( new Date(paraCommitNodesData[fileLink.commitId].datetime) ),
-                        "y": this.yScale( paraCommitNodesData[fileLink.commitId].quality * 100 )
+                        "x": this.xScale( new Date(lookup[fileLink.commitId].datetime) ),
+                        "y": this.yScale( lookup[fileLink.commitId].quality * 100 )
                     }
                 );
 

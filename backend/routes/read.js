@@ -3,6 +3,7 @@ var path = require('path');
 var nodegit = require('nodegit');
 var router = express.Router();
 var Database = require('arangojs');
+var Promise = require('bluebird');
 
 /* GET mock listing. */
 router.get('/', function (req, res, next) {
@@ -11,16 +12,51 @@ router.get('/', function (req, res, next) {
 
 /* GET commit data */
 router.get('/commit_data', function (req, res, next) {
-
+    //TODO konfigurierbar machen
     var db = new Database( {url:'http://root:Nenya123@127.0.0.1:8529'} );
     db.useDatabase('repoflow');
     db.useBasicAuth('root','Nenya123');
 
+    var commits = db.query("FOR c IN commit RETURN c").then( function(values){ return values; } );
+    var files = db.query("FOR f IN file RETURN f").then( function(values){ return values; } );
 
+    Promise.all( [commits, files] ).then( function(values){
 
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(JSON.stringify());
+        //creating File array from result with links consisting of files from the same name
+        var filesResult = values[1]["_result"];
+        var fileDataArray = [];
+        for( var i=0; i<filesResult.length;i++ )
+        {
+            var filesResult = values[1]["_result"];
+            var fileDataArray = [];
+            for( var i=0; i<filesResult.length;i++ )
+            {
+                var fileLinkArray = [];
+                //so that files do net get counted twice
+                for( var j=i; j<filesResult.length;j++ )
+                {
+                    if( filesResult[i].name == filesResult[j].name)
+                        fileLinkArray.push( {"name":filesResult[j].name, "commitId":filesResult[j].commitId} )
+                }
+
+                if( fileLinkArray.length > 1 )
+                    fileDataArray.push( { links:fileLinkArray,color:"red"/*"#"+((1<<24)*Math.random()|0).toString(16)*/ } )
+            }
+        }
+
+        //creating Commit array from result
+        var commitResult = values[0]["_result"];
+        var commitDataArray = commitResult;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.send(JSON.stringify(
+            {
+                "commit-nodes":commitDataArray,
+                "file-links":fileDataArray
+            }
+        ));
+    } );
 });
 
 /* GET mocked commit data. */

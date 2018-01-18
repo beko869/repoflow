@@ -68,7 +68,7 @@ router.put('/database', function (req, res, next) {
                             "       color:@color, " +
                             "       datetime:@datetime, " +
                             "       quality:@quality, " +
-                            "       quality2:@quality2," +
+                            "       fileCount:@fileCount," +
                             "       author:@author" +
                             "   } " +
                             "IN commit " +
@@ -78,7 +78,7 @@ router.put('/database', function (req, res, next) {
                                 color: "blue",
                                 datetime: commitDataArray[i].commit.date,
                                 quality: Math.random(),
-                                quality2: Math.random(),
+                                fileCount: commitDataArray[i].files.length,
                                 author: commitDataArray[i].commit.author
                             });
 
@@ -100,6 +100,8 @@ router.put('/database', function (req, res, next) {
                                 });
                         }
                     }
+
+                    //TODO richtig promisen und status retournieren
                     res.send( commitDataArray );
                 });
         });

@@ -24,4 +24,70 @@ export class UtilityService {
 
         return counter;
     }
+
+    /**
+     * returns a lookup that can be searched for the id of an object in an array
+     * @param paraArray an array with objects, the objects have to contain an id field
+     * @returns the lookup array that can be searched for an id
+     */
+    public createIDLookupForArray( paraArray: any ) {
+        var lookup = {};
+        for (var i = 0, len = paraArray.length; i < len; i++) {
+            lookup[paraArray[i].id] = paraArray[i];
+        }
+
+        return lookup;
+    }
+
+    /**
+     * returns a lookup that can be searched for the id of an object in an array
+     * @param paraArray an array with objects, the objects have to contain an id field
+     * @returns the lookup array that can be searched for an id
+     */
+    public createXLookupForArray( paraArray: any ) {
+        var lookup = {};
+        for (var i = 0, len = paraArray.length; i < len; i++) {
+            lookup[paraArray[i].x] = paraArray[i];
+        }
+
+        return lookup;
+    }
+
+    /**
+     * returns the closest value in an array that is lower than the the given value
+     * @param paraArray
+     * @param paraValue
+     * @returns {any}
+     */
+    public getClosestValueInArray( paraArray: any, paraValue: any ) {
+
+        let allLowerValuesArray = [];
+        for( let i = 0; i<paraArray.length; i++ ) {
+            if( paraArray[i] < paraValue ) {
+                allLowerValuesArray.push(paraArray[i]);
+            }
+        }
+
+        let closest = allLowerValuesArray.reduce(function(prev, curr) {
+            return (Math.abs(curr - paraValue) < Math.abs(prev - paraValue) ? curr : prev);
+        });
+
+        return closest;
+    }
+
+    /**
+     * compare function for datetimes from commitnodes
+     * @param a
+     * @param b
+     * @returns {number}
+     */
+    public commitDatetimeComparer(a,b){
+        if( a.datetime < b.datetime ){
+            return -1;
+        }
+        if( a.datetime > b.datetime ){
+            return 1
+        }
+        return 0
+    }
 }
