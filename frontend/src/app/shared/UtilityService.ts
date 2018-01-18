@@ -77,15 +77,25 @@ export class UtilityService {
 
     /**
      * compare function for datetimes from commitnodes
-     * @param a
-     * @param b
-     * @returns {number}
+     * @param a element to be compared
+     * @param b element to be compared
+     * @returns {number} returns 1, -1 or 0 depending if a or b is bigger or same value
      */
     public commitDatetimeComparer(a,b){
         if( a.datetime < b.datetime ){
             return -1;
         }
         if( a.datetime > b.datetime ){
+            return 1
+        }
+        return 0
+    }
+
+    public fileDatetimeComparer(a,b){
+        if( a.c.datetime < b.c.datetime ){
+            return -1;
+        }
+        if( a.c.datetime > b.c.datetime ){
             return 1
         }
         return 0

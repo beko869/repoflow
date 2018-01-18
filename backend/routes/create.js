@@ -67,7 +67,9 @@ router.put('/database', function (req, res, next) {
                             "       name:@message, " +
                             "       color:@color, " +
                             "       datetime:@datetime, " +
-                            "       quality:@quality, " +
+                            "       quality_metric_1:@quality_metric_1, " +
+                            "       quality_metric_2:@quality_metric_2, " +
+                            "       quality_metric_3:@quality_metric_3, " +
                             "       fileCount:@fileCount," +
                             "       author:@author" +
                             "   } " +
@@ -77,7 +79,9 @@ router.put('/database', function (req, res, next) {
                                 message: commitDataArray[i].commit.message,
                                 color: "blue",
                                 datetime: commitDataArray[i].commit.date,
-                                quality: Math.random(),
+                                quality_metric_1: Math.random(),
+                                quality_metric_2: Math.random(),
+                                quality_metric_3: Math.random(),
                                 fileCount: commitDataArray[i].files.length,
                                 author: commitDataArray[i].commit.author
                             });
@@ -90,13 +94,19 @@ router.put('/database', function (req, res, next) {
                                 "INSERT " +
                                 "   {   name:@name," +
                                 "       commitId:@sha," +
-                                "       status:@status " +
+                                "       status:@status, " +
+                                "       quality_metric_1:@quality_metric_1, " +
+                                "       quality_metric_2:@quality_metric_2, " +
+                                "       quality_metric_3:@quality_metric_3 " +
                                 "   } " +
                                 "IN file " +
                                 "RETURN NEW",
                                 {   name: fileArray[j].path,
                                     sha: commitDataArray[i].commit.commit_sha,
-                                    status: fileArray[j].status
+                                    status: fileArray[j].status,
+                                    quality_metric_1: Math.random(),
+                                    quality_metric_2: Math.random(),
+                                    quality_metric_3: Math.random()
                                 });
                         }
                     }

@@ -39,4 +39,8 @@ export class OptionsPanelComponent implements OnInit {
         }
     }
 
+    public getFilePath(): void {
+
+    }
+
 }

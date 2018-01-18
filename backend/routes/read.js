@@ -59,6 +59,26 @@ router.get('/commit_data', function (req, res, next) {
     } );
 });
 
+/* GET commit data */
+router.get('/file_data/:filename', function (req, res, next) {
+    //TODO konfigurierbar machen
+    var db = new Database( {url:'http://root:Nenya123@127.0.0.1:8529'} );
+    db.useDatabase('repoflow');
+    db.useBasicAuth('root','Nenya123');
+
+    db.query("FOR c IN commit FOR f IN file FILTER f.name=='"+req.params.filename+"' AND f.commitId == c.id RETURN {f,c}")
+        .then( function(values){
+
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify(
+                {
+                    "files":values._result
+                }
+            ));
+        } );
+});
+
 /* GET mocked commit data. */
 router.get('/0', function (req, res, next) {
     res.setHeader('Content-Type', 'application/json');
