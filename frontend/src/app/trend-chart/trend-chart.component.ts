@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {OptionsPanelComponent} from "../options-panel/options-panel.component";
 
 import * as d3 from 'd3';
@@ -30,9 +30,10 @@ export class TrendChartComponent implements OnInit {
     private xAxis: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
+    private commitData: any;
     private optionsPanel: OptionsPanelComponent;
 
-    constructor( private utility: UtilityService ) {
+    constructor( private utility: UtilityService, private changeDetector: ChangeDetectorRef ) {
         this.margin = {top:20, right:100, bottom:60, left:30};
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
@@ -40,18 +41,28 @@ export class TrendChartComponent implements OnInit {
     }
 
     ngOnInit() {
-        d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
+        d3Request.json(environment.dataHost + 'read/initial_data', (error, data) => {
             this.initSvg();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
             this.initTooltip();
-
             this.renderAxis();
+            this.initOptionsPanel( data );
         });
 
         this.doCommitViewRequestAndRender();
     }
 
+    /*public async doCommitViewRequest() {
+        return d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
+            return data;
+        });
+    }*/
+
+
+    /**
+     * requests commit data and renders the basic commit view
+     */
     public doCommitViewRequestAndRender() {
         this.clearFileView();
 
@@ -60,6 +71,10 @@ export class TrendChartComponent implements OnInit {
         });
     }
 
+
+    /**
+     * requests file data and renders the basic commit view
+     */
     public doFileViewRequestAndRender( paraFilePath: string ) {
         this.clearCommitView();
 
@@ -68,27 +83,44 @@ export class TrendChartComponent implements OnInit {
         });
     }
 
+
+    /**
+     * renders the commit view with the given data array
+     * @param paraData array containing commit nodes data
+     * @param paraMetricArray array which metrics should be rendered
+     */
     public renderCommitView( paraData: any, paraMetricArray: any = [1] ): void {
         this.renderCommitViewNodes( paraData["commit-nodes"] );
         this.renderCommitViewLinks( paraData["commit-nodes"] );
-        //this.renderCommitViewFileLinks( paraData["commit-nodes"], paraData["file-links"] )
     }
 
+
+    /**
+     * renders the file view with the given data array
+     * @param paraData array containing files data
+     */
     public renderFileView( paraData: any ): void {
         this.renderFileViewNodes( paraData["files"] );
         this.renderFileViewFileLinks( paraData["files"] )
     }
 
+
+    /**
+     * clears the view from all elements containing commit classes
+     */
     public clearCommitView(): void {
         d3Selection.selectAll('.commit-view-node').remove();
         d3Selection.selectAll('.commit-view-link').remove();
     }
 
+
+    /**
+     * clears the view from all elements containing file classes
+     */
     public clearFileView(): void {
         d3Selection.selectAll('.file-view-node').remove();
         d3Selection.selectAll('.file-view-link').remove();
     }
-
 
 
     /**
@@ -103,6 +135,7 @@ export class TrendChartComponent implements OnInit {
             .append("g")
             .attr("transform","translate("+this.margin.left+","+this.margin.top + ")");
     }
+
 
     /**
      * initializes the scales for this visualization
@@ -121,6 +154,7 @@ export class TrendChartComponent implements OnInit {
             .range( [0, this.width] );
     }
 
+
     /**
      * initializes the x and y axis with the corresponding scales
      */
@@ -129,6 +163,7 @@ export class TrendChartComponent implements OnInit {
         this.yAxis = d3Axis.axisRight(this.yScale);
         this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%dT%H:%M:%S"));
     }
+
 
     /**
      * initializes a transparent div element with class tooltip
@@ -140,6 +175,16 @@ export class TrendChartComponent implements OnInit {
             .style("opacity",0)
     }
 
+
+    /**
+     * initialize the options panel
+     */
+    public initOptionsPanel( data ): void {
+        this.optionsPanel = new OptionsPanelComponent();
+        this.optionsPanel.setFileList( data["file-names"] );
+    }
+
+
     /**
      * fades the tooltip html in at the left corner of the visualization
      * @param paraTooltipContent the content to be displayed in the tooltip
@@ -150,12 +195,14 @@ export class TrendChartComponent implements OnInit {
             .style("top", (d3.event.pageY - 28) + "px");
     }
 
+
     /**
      * fades out the tooltip html
      */
     public fadeOutTooltip(): void {
         this.tooltip.transition().duration(500).style("opacity",0);
     }
+
 
     /**
      * renders the axis with the initialized values to the svg
@@ -172,6 +219,7 @@ export class TrendChartComponent implements OnInit {
             .selectAll("text")
             .attr("transform","rotate(-65)");
     }
+
 
     /**
      * renders the commit nodes retrieved from the backend
@@ -199,6 +247,7 @@ export class TrendChartComponent implements OnInit {
                 this.fadeOutTooltip();
             });
     }
+
 
     /**
      * renders links based on the order of commits
@@ -309,6 +358,7 @@ export class TrendChartComponent implements OnInit {
         } );
     }
 
+
     /**
      * renders the commit nodes retrieved from the backend
      */
@@ -331,6 +381,7 @@ export class TrendChartComponent implements OnInit {
             .attr('fill', 'teal')
             .attr('transform', 'translate(0,-5)');
     }
+
 
     /**
      * renders links based on the files paths through commits
@@ -367,6 +418,7 @@ export class TrendChartComponent implements OnInit {
             .attr("d", line);
     }
 
+
     /**
      * switches between commit and file view
      * @param {number} paraView specifies the view is currently used
@@ -382,6 +434,7 @@ export class TrendChartComponent implements OnInit {
 
         return;
     }
+
 
     /**
      * filters for a specific file and displays the file quality metric view

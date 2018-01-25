@@ -5,8 +5,8 @@
   </div>
   <div class="search-input-group">
     <label>Filter by file</label>
-    <select>
-      <option>-- please choose --</option>
+    <select (change)="emitFilePathFromSelect( $event.target.value )">
+      <option *ngFor="let i of getFileList()" value="{{i}}">{{i}}</option>
     </select>
   </div>
   <div class="search-input-group">

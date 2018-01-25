@@ -8,8 +8,11 @@ import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 export class OptionsPanelComponent implements OnInit {
 
     private activeView = 0;
+    private currentlyFilteredFiles = [];
+    private fileSelectList = ['--- please choose ---','backend/routes/mock_data.js','backend/routes/create.js'];
 
     @Output() switchViewEvent = new EventEmitter<number>();
+    @Output() filterForFileEvent = new EventEmitter<string>();
 
     constructor() {
     }
@@ -39,8 +42,17 @@ export class OptionsPanelComponent implements OnInit {
         }
     }
 
-    public getFilePath(): void {
+    public emitFilePathFromSelect( paraValue ): void {
+        this.currentlyFilteredFiles.push( paraValue );
+        this.filterForFileEvent.emit( paraValue );
+    }
 
+    public setFileList( paraValues:any ): void {
+        this.fileSelectList = paraValues;
+    }
+
+    public getFileList(): any {
+        return this.fileSelectList;
     }
 
 }

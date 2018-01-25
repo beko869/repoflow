@@ -43,7 +43,7 @@ export class D3PlaygroundComponent implements OnInit {
             .nodePadding(10)
             .extent([[1, 1], [this.width - 1, this.height - 6]]);
 
-        this.optionsPanel = new OptionsPanelComponent();
+        //this.optionsPanel = new OptionsPanelComponent();
 
         this.switchView(0);
         this.clearSankey();
