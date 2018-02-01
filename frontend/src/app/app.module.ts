@@ -3,14 +3,13 @@ import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app.component';
-import { D3PlaygroundComponent } from './d3-playground/d3-playground.component';
 import { OptionsPanelComponent } from './options-panel/options-panel.component';
 import { TrendChartComponent } from './trend-chart/trend-chart.component';
+import { OptionsPanelValueService } from "./shared/OptionsPanelValueService";
 
 @NgModule({
   declarations: [
     AppComponent,
-    D3PlaygroundComponent,
     OptionsPanelComponent,
     TrendChartComponent
   ],
@@ -18,16 +17,12 @@ import { TrendChartComponent } from './trend-chart/trend-chart.component';
     BrowserModule,
     RouterModule.forRoot([
         {
-          path: 'playground',
-          component: D3PlaygroundComponent
-        },
-        {
           path: 'trend',
           component: TrendChartComponent
         }
     ])
   ],
-  providers: [],
+  providers: [OptionsPanelValueService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

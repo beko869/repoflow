@@ -1,58 +1,49 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {
+    ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter,
+    Output
+} from '@angular/core';
+import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
 
 @Component({
     selector: 'app-options-panel',
     templateUrl: './options-panel.component.html',
-    styleUrls: ['./options-panel.component.css']
+    styleUrls: ['./options-panel.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OptionsPanelComponent implements OnInit {
 
-    private activeView = 0;
-    private currentlyFilteredFiles = [];
-    private fileSelectList = ['--- please choose ---','backend/routes/mock_data.js','backend/routes/create.js'];
+export class OptionsPanelComponent {
 
     @Output() switchViewEvent = new EventEmitter<number>();
-    @Output() filterForFileEvent = new EventEmitter<string>();
+    @Output() addFileToVisualizationEvent = new EventEmitter<string>();
 
-    constructor() {
+    constructor( private optionsPanelValueService:OptionsPanelValueService, private ref:ChangeDetectorRef ) {
     }
 
-    ngOnInit() {
+
+    /**
+     * sets the file list for the file list select from the options panel value service
+     * @param {string[]} paraValues
+     */
+    public setFileList( paraValuesArray ): void {
+        this.optionsPanelValueService.setFileList( paraValuesArray );
+        this.ref.markForCheck();
     }
 
-    public switchViewTrigger(): void {
-        if (this.activeView === 1 || this.activeView === null) {
-            this.activeView = 0;
-        } else {
-            this.activeView = 1;
-        }
 
-        this.switchViewEvent.emit(this.activeView);
+    /**
+     * gets the the file list from the file list select
+     * @returns {string[]}
+     */
+    public getFileListForSelect(): string[] {
+        return this.optionsPanelValueService.getFileList();
     }
 
-    public getActiveView(): number {
-        return this.activeView;
-    }
 
-    public getActiveViewName(): string {
-        if (this.getActiveView() === 0) {
-            return 'to file view';
-        } else {
-            return 'to commit view';
-        }
+    /**
+     sets the currently fitered file option and emits a filter for file event
+     */
+    public setFileSelectValueAndEmitAddFileToVisualizationEvent( paraValue:string ): void {
+        this.optionsPanelValueService.setFileSelectValue( paraValue );
+        this.addFileToVisualizationEvent.emit();
     }
-
-    public emitFilePathFromSelect( paraValue ): void {
-        this.currentlyFilteredFiles.push( paraValue );
-        this.filterForFileEvent.emit( paraValue );
-    }
-
-    public setFileList( paraValues:any ): void {
-        this.fileSelectList = paraValues;
-    }
-
-    public getFileList(): any {
-        return this.fileSelectList;
-    }
-
 }

@@ -95,6 +95,7 @@ router.put('/database', function (req, res, next) {
                                 "   {   name:@name," +
                                 "       commitId:@sha," +
                                 "       status:@status, " +
+                                "       color:@color," +
                                 "       quality_metric_1:@quality_metric_1, " +
                                 "       quality_metric_2:@quality_metric_2, " +
                                 "       quality_metric_3:@quality_metric_3 " +
@@ -104,6 +105,7 @@ router.put('/database', function (req, res, next) {
                                 {   name: fileArray[j].path,
                                     sha: commitDataArray[i].commit.commit_sha,
                                     status: fileArray[j].status,
+                                    color: '#'+Math.floor(Math.random()*16777215).toString(16),
                                     quality_metric_1: Math.random(),
                                     quality_metric_2: Math.random(),
                                     quality_metric_3: Math.random()

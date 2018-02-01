@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {OptionsPanelComponent} from "../options-panel/options-panel.component";
 
 import * as d3 from 'd3';
@@ -11,6 +11,7 @@ import * as d3Shape from 'd3-shape';
 import * as d3Request from 'd3-request';
 import {environment} from "../../environments/environment";
 import {UtilityService} from '../shared/UtilityService';
+import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
 
 @Component({
     selector: 'app-trend-chart',
@@ -30,10 +31,10 @@ export class TrendChartComponent implements OnInit {
     private xAxis: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
-    private commitData: any;
-    private optionsPanel: OptionsPanelComponent;
 
-    constructor( private utility: UtilityService, private changeDetector: ChangeDetectorRef ) {
+    @ViewChild('optionsPanel') optionsPanel;
+
+    constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService ) {
         this.margin = {top:20, right:100, bottom:60, left:30};
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
@@ -47,18 +48,10 @@ export class TrendChartComponent implements OnInit {
             this.initAxis();
             this.initTooltip();
             this.renderAxis();
-            this.initOptionsPanel( data );
-        });
-
-        this.doCommitViewRequestAndRender();
+            this.initOptionsPanel( data["file-names"] );
+            this.doCommitViewRequestAndRender();
+        })
     }
-
-    /*public async doCommitViewRequest() {
-        return d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
-            return data;
-        });
-    }*/
-
 
     /**
      * requests commit data and renders the basic commit view
@@ -179,9 +172,8 @@ export class TrendChartComponent implements OnInit {
     /**
      * initialize the options panel
      */
-    public initOptionsPanel( data ): void {
-        this.optionsPanel = new OptionsPanelComponent();
-        this.optionsPanel.setFileList( data["file-names"] );
+    public initOptionsPanel( paraFileNamesArray: string[] ): void {
+        this.optionsPanel.setFileList( paraFileNamesArray );
     }
 
 
@@ -364,8 +356,6 @@ export class TrendChartComponent implements OnInit {
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
 
-        console.log(paraFileNodesData);
-
         this.trendVisualizationWrapper.append('g').selectAll('rect')
             .data(paraFileNodesData)
             .enter()
@@ -402,7 +392,8 @@ export class TrendChartComponent implements OnInit {
         filesSortyByCommitDatetime.forEach( (file,i)=>{
             fileLinkArray.push({
                 "x": this.xScale( new Date(file.c.datetime) ),
-                "y": this.yScale( file.f.quality_metric_1*100 )
+                "y": this.yScale( file.f.quality_metric_1*100 ),
+                "color": file.f.color
             });
         });
 
@@ -411,7 +402,7 @@ export class TrendChartComponent implements OnInit {
             .datum(fileLinkArray)
             .attr('class','file-view-link')
             .attr("fill", "none")
-            .attr("stroke", 'red')
+            .attr("stroke", function(d){return d[0].color})
             .attr("stroke-linejoin", "round")
             .attr("stroke-linecap", "round")
             .attr("stroke-width", 3)
@@ -437,16 +428,18 @@ export class TrendChartComponent implements OnInit {
 
 
     /**
-     * filters for a specific file and displays the file quality metric view
+     * adds the file to the visualization
      * @param {string} paraFilepath specifies the file data to be displayed
      */
-    public filterForFile( paraFilepath:string = '' ): void {
+    public addFileToVisualization(): void {
 
-        if( paraFilepath == '' ){
+        let filepath = this.optionsPanelValueService.getFileSelectValue();
+
+        if( filepath == '' ){
             this.doCommitViewRequestAndRender();
         }
         else {
-            this.doFileViewRequestAndRender( paraFilepath );
+            this.doFileViewRequestAndRender( filepath );
         }
 
         return;
