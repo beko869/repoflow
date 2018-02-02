@@ -87,7 +87,7 @@ router.put('/database', function (req, res, next) {
                             });
 
                         var fileArray = commitDataArray[i].files;
-
+                        
                         for( var j = 0; j<fileArray.length; j++ ){
                             //insert file data
                             db.query(
@@ -109,7 +109,13 @@ router.put('/database', function (req, res, next) {
                                     quality_metric_1: Math.random(),
                                     quality_metric_2: Math.random(),
                                     quality_metric_3: Math.random()
-                                });
+                                })
+                            .then(function(data){
+                                db.query( "UPSERT {name: @filename} INSERT {name: @filename,color: @color}UPDATE {}IN file_color RETURN {file_color: NEW}",
+                                    { filename: data["_result"][0].name,
+                                      color: '#'+Math.floor(Math.random()*16777215).toString(16)
+                                    });
+                            });
                         }
                     }
 

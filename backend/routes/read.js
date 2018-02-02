@@ -18,7 +18,7 @@ router.get('/initial_data', function (req, res, next) {
     db.useBasicAuth('root','Nenya123');
 
     var commits = db.query("FOR c IN commit RETURN c").then( function(values){ return values; } );
-    var files = db.query("FOR f IN file COLLECT name = f.name RETURN name").then( function(values){ return values; } );
+    var files = db.query("FOR f IN file COLLECT name = f.name RETURN name").then( function(values){ return values; } ); //TODO join auf die color tabelle
 
     Promise.all( [commits, files] ).then( function(values){
 
@@ -67,7 +67,7 @@ router.get('/file_data/:filename', function (req, res, next) {
     db.useDatabase('repoflow');
     db.useBasicAuth('root','Nenya123');
 
-    db.query("FOR c IN commit FOR f IN file FILTER f.name=='"+req.params.filename+"' AND f.commitId == c.id RETURN {f,c}")
+    db.query("FOR c IN commit FOR f IN file FILTER f.name=='"+req.params.filename+"' AND f.commitId == c.id RETURN {f,c}") //TODO join auf die color tabelle
         .then( function(values){
 
             res.setHeader('Content-Type', 'application/json');

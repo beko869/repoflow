@@ -1,5 +1,4 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {OptionsPanelComponent} from "../options-panel/options-panel.component";
 
 import * as d3 from 'd3';
 import * as d3Selection from 'd3-selection';
@@ -110,9 +109,15 @@ export class TrendChartComponent implements OnInit {
     /**
      * clears the view from all elements containing file classes
      */
-    public clearFileView(): void {
-        d3Selection.selectAll('.file-view-node').remove();
-        d3Selection.selectAll('.file-view-link').remove();
+    public clearFileView( paraFileName:string = null ): void {
+        if( paraFileName === null ) {
+            d3Selection.selectAll('.file-view-node').remove();
+            d3Selection.selectAll('.file-view-link').remove();
+        }
+        else {
+            d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("")).remove();
+            d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("")).remove();
+        }
     }
 
 
@@ -360,7 +365,7 @@ export class TrendChartComponent implements OnInit {
             .data(paraFileNodesData)
             .enter()
             .append('rect')
-            .attr('class','file-view-node')
+            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
             .attr('x', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
             .attr('y', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
             .attr('width', 10)
@@ -393,14 +398,15 @@ export class TrendChartComponent implements OnInit {
             fileLinkArray.push({
                 "x": this.xScale( new Date(file.c.datetime) ),
                 "y": this.yScale( file.f.quality_metric_1*100 ),
-                "color": file.f.color
+                "color": file.f.color,
+                "name": file.f.name
             });
         });
 
         this.trendVisualizationWrapper
             .append('path')
             .datum(fileLinkArray)
-            .attr('class','file-view-link')
+            .attr('class', (d)=>{ return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") } )
             .attr("fill", "none")
             .attr("stroke", function(d){return d[0].color})
             .attr("stroke-linejoin", "round")
@@ -441,6 +447,17 @@ export class TrendChartComponent implements OnInit {
         else {
             this.doFileViewRequestAndRender( filepath );
         }
+
+        return;
+    }
+
+    /**
+     * removes the file from the visualization
+     * @param {string} paraFilepath specifies the file data to be removed
+     */
+    public removeFileFromVisualization(): void {
+        let filepath = this.optionsPanelValueService.getFileRemovedValue();
+        this.clearFileView( filepath );
 
         return;
     }

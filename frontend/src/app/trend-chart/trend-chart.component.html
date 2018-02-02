@@ -1,6 +1,7 @@
 <app-options-panel #optionsPanel
         (switchViewEvent)="switchView( $event )"
-        (addFileToVisualizationEvent)="addFileToVisualization()">
+        (addFileToVisualizationEvent)="addFileToVisualization()"
+        (removeFileFromVisualizationEvent)="removeFileFromVisualization()">
 </app-options-panel>
 <div id="trend-chart">
   <!--trend chart gets rendered here-->

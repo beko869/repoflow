@@ -7,7 +7,9 @@ import {Injectable} from '@angular/core';
 export class OptionsPanelValueService {
 
     private fileSelectValue: string;
-    public fileList: any;
+    private fileRemoveValue: string;
+    private fileList: string[];
+    private selectedFileList: string[] = [];
 
     /**
      * sets the selected file value from the options panel component file dropdown
@@ -15,6 +17,7 @@ export class OptionsPanelValueService {
      */
     public setFileSelectValue( paraValue: string ){
         this.fileSelectValue = paraValue;
+        this.selectedFileList.push( paraValue );
     }
 
     /**
@@ -23,6 +26,14 @@ export class OptionsPanelValueService {
      */
     public getFileSelectValue():string {
         return this.fileSelectValue;
+    }
+
+    /**
+     * gets the removed file value from the options panel component selected file list
+     * @returns {string}
+     */
+    public getFileRemovedValue():string {
+        return this.fileRemoveValue;
     }
 
     /**
@@ -39,5 +50,23 @@ export class OptionsPanelValueService {
      */
     public getFileList(): any {
         return this.fileList;
+    }
+
+    public getSelectedFileList(): string[] {
+        return this.selectedFileList;
+    }
+
+    /**
+     * removes entry from the selected file list
+     * @param paraValueToBeRemoved
+     */
+    public removeFromSelectedFileList( paraValueToBeRemoved ): void {
+        this.fileRemoveValue = paraValueToBeRemoved;
+
+        for (var i=this.selectedFileList.length-1; i>=0; i--) {
+            if (this.selectedFileList[i] === paraValueToBeRemoved) {
+                this.selectedFileList.splice(i, 1);
+            }
+        }
     }
 }
