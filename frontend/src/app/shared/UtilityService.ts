@@ -39,7 +39,7 @@ export class UtilityService {
     }
 
     /**
-     * returns a lookup that can be searched for the id of an object in an array
+     * returns a lookup that can be searched for the x key of an object in an array
      * @param paraArray an array with objects, the objects have to contain an id field
      * @returns the lookup array that can be searched for an id
      */
@@ -47,6 +47,20 @@ export class UtilityService {
         var lookup = {};
         for (var i = 0, len = paraArray.length; i < len; i++) {
             lookup[paraArray[i].x] = paraArray[i];
+        }
+
+        return lookup;
+    }
+
+    /**
+     * returns a lookup that can be searched for the name of an object in an array
+     * @param paraArray an array with objects, the objects have to contain an id field
+     * @returns the color lookup array that can be searched for a filename
+     */
+    public createFileNameColorLookupForArray( paraArray: any ) {
+        var lookup = {};
+        for (var i = 0, len = paraArray.length; i < len; i++) {
+            lookup[paraArray[i].name] = paraArray[i];
         }
 
         return lookup;

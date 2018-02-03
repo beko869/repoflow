@@ -8,6 +8,7 @@ import * as d3Array from 'd3-array';
 import * as d3TimeFormat from 'd3-time-format';
 import * as d3Shape from 'd3-shape';
 import * as d3Request from 'd3-request';
+import * as d3Zoom from 'd3-zoom';
 import {environment} from "../../environments/environment";
 import {UtilityService} from '../shared/UtilityService';
 import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
@@ -28,8 +29,11 @@ export class TrendChartComponent implements OnInit {
     private xScale: any;
     private yAxis: any;
     private xAxis: any;
+    private renderedXAxis: any;
+    private xZoom: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
+    private fileColorLookupArray: any;
 
     @ViewChild('optionsPanel') optionsPanel;
 
@@ -42,13 +46,17 @@ export class TrendChartComponent implements OnInit {
 
     ngOnInit() {
         d3Request.json(environment.dataHost + 'read/initial_data', (error, data) => {
+            this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
+
             this.initSvg();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
             this.initTooltip();
             this.renderAxis();
-            this.initOptionsPanel( data["file-names"] );
+            this.initOptionsPanel( data["file-names"], this.fileColorLookupArray );
             this.doCommitViewRequestAndRender();
+
+            //this.initXZoom();
         })
     }
 
@@ -162,6 +170,23 @@ export class TrendChartComponent implements OnInit {
         this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%dT%H:%M:%S"));
     }
 
+    /**
+     * initializes the x axis zoom
+     */
+    public initXZoom(): void {
+
+        //d3Zoom.zoom().newScale()
+
+        this.xZoom = d3Zoom.zoom().scaleExtent([1,10]).on("zoom", this.updateXZoom());
+
+        //set zoom on x axis
+        //this.renderedXAxis.call( this.xAxis.scale( d3Zoom.transform.rescaleX(this.xScale) ) )
+    }
+
+    public updateXZoom(): void {
+        this.trendVisualizationWrapper.call(this.xZoom);
+    }
+
 
     /**
      * initializes a transparent div element with class tooltip
@@ -177,8 +202,9 @@ export class TrendChartComponent implements OnInit {
     /**
      * initialize the options panel
      */
-    public initOptionsPanel( paraFileNamesArray: string[] ): void {
+    public initOptionsPanel( paraFileNamesArray: string[], paraFileColorsArray: any ): void {
         this.optionsPanel.setFileList( paraFileNamesArray );
+        this.optionsPanel.setFileColorList( paraFileColorsArray );
     }
 
 
@@ -209,7 +235,7 @@ export class TrendChartComponent implements OnInit {
             .attr("class","yaxis")
             .call(this.yAxis);
 
-        this.trendVisualizationWrapper.append("g")
+        this.renderedXAxis = this.trendVisualizationWrapper.append("g")
             .attr("class","xaxis")
             .attr("transform", "translate(0," + this.height + ")")
             .call(this.xAxis)
@@ -230,10 +256,7 @@ export class TrendChartComponent implements OnInit {
         .attr('class','commit-view-node')
         .attr('cx', (d)=>{ return this.xScale( new Date(d.datetime) ) })
         .attr('cy', (d)=>{ return this.yScale( d.quality_metric_1*100 ) })
-        //.attr('width', 10)
-        //.attr('height', 50)
         .attr('fill', 'teal')
-        //.attr('width', 10)
         .attr('r', (d)=>{ return d.fileCount*3 })
         .attr('fill', 'teal')
             .on("mouseover", (d) => {
@@ -361,20 +384,41 @@ export class TrendChartComponent implements OnInit {
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
 
+        //add main dot to fileview nodes
         this.trendVisualizationWrapper.append('g').selectAll('rect')
             .data(paraFileNodesData)
             .enter()
-            .append('rect')
+            .append('circle')
             .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
-            .attr('x', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
-            .attr('y', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
-            .attr('width', 10)
-            .attr('height', 50)
-            .attr('fill', 'teal')
-            .attr('width', 10)
-            .attr('height', 10)
-            .attr('fill', 'teal')
-            .attr('transform', 'translate(0,-5)');
+            .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
+            .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
+            .attr('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
+            .attr('r', 8)
+            .on("mouseover", (d) => {
+                this.fadeInTooltip( d.f.name );
+            })
+            .on("mouseout",(d)=>{
+                this.fadeOutTooltip();
+            });
+
+        //add middle dot to fileview nodes for better visibility
+        this.trendVisualizationWrapper.append('g').selectAll('rect')
+            .data(paraFileNodesData)
+            .enter()
+            .append('circle')
+            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
+            .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
+            .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
+            .attr('fill', 'white')
+            .attr('r', 4)
+            .on("mouseover", (d) => {
+                this.fadeInTooltip( d.f.name );
+            })
+            .on("mouseout",(d)=>{
+                this.fadeOutTooltip();
+            });
+
+
     }
 
 
@@ -408,7 +452,9 @@ export class TrendChartComponent implements OnInit {
             .datum(fileLinkArray)
             .attr('class', (d)=>{ return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") } )
             .attr("fill", "none")
-            .attr("stroke", function(d){return d[0].color})
+            .attr("stroke", (d)=>{
+                return this.fileColorLookupArray[d[0].name].color;
+            })
             .attr("stroke-linejoin", "round")
             .attr("stroke-linecap", "round")
             .attr("stroke-width", 3)

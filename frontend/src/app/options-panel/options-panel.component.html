@@ -5,7 +5,12 @@
       <option *ngFor="let i of getFileListForSelect()" value="{{i}}">{{i}}</option>
     </select>
     <div id="selected-files-holder">
-      <div class="list-for-delete-panel" *ngFor="let file of getSelectedFileList()">{{file}}<fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa></div>
+      <div class="list-for-delete-panel"
+           *ngFor="let file of getSelectedFileList()"
+           [style.color]="getFileColorByFileName(file)">
+              {{"..."+file.slice(-35)}}
+              <fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa>
+      </div>
     </div>
   </div>
 </div>

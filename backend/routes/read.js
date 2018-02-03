@@ -17,25 +17,30 @@ router.get('/initial_data', function (req, res, next) {
     db.useDatabase('repoflow');
     db.useBasicAuth('root','Nenya123');
 
-    var commits = db.query("FOR c IN commit RETURN c").then( function(values){ return values; } );
-    var files = db.query("FOR f IN file COLLECT name = f.name RETURN name").then( function(values){ return values; } ); //TODO join auf die color tabelle
+    var commitsQueryPromise = db.query("FOR c IN commit RETURN c").then( function(values){ return values; } );
+    var fileCcolorsQueryPromise = db.query("FOR fc IN file_color RETURN fc").then( function(values){ return values; } );
+    var filesPromise = db.query("FOR f IN file COLLECT name = f.name RETURN name").then( function(values){ return values; } ); //TODO join auf die color tabelle
 
-    Promise.all( [commits, files] ).then( function(values){
+    Promise.all( [commitsQueryPromise, filesPromise, fileCcolorsQueryPromise] ).then( function(values){
+        //creating Commit array from result
+        var commitResult = values[0]["_result"];
+        var commitDataArray = commitResult;
 
         //creating File array from result with links consisting of files from the same name
         var filesResult = values[1]["_result"];
         var fileDataArray = filesResult;
 
-        //creating Commit array from result
-        var commitResult = values[0]["_result"];
-        var commitDataArray = commitResult;
+        //creating file color array from file color result
+        var fileColorResult = values[2]["_result"];
+        var fileColorDataArray = fileColorResult;
 
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.send(JSON.stringify(
             {
                 "commit-nodes":commitDataArray,
-                "file-names":fileDataArray
+                "file-names":fileDataArray,
+                "file-colors":fileColorDataArray
             }
         ));
     } );

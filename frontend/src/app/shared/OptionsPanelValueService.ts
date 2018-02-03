@@ -1,4 +1,5 @@
 import {Injectable} from '@angular/core';
+import {UtilityService} from "./UtilityService";
 
 @Injectable()
 /**
@@ -9,7 +10,9 @@ export class OptionsPanelValueService {
     private fileSelectValue: string;
     private fileRemoveValue: string;
     private fileList: string[];
+    private fileColorList: any;
     private selectedFileList: string[] = [];
+
 
     /**
      * sets the selected file value from the options panel component file dropdown
@@ -20,6 +23,7 @@ export class OptionsPanelValueService {
         this.selectedFileList.push( paraValue );
     }
 
+
     /**
      * gets the selected file value from the options panel component file dropdown
      * @returns {string}
@@ -27,6 +31,7 @@ export class OptionsPanelValueService {
     public getFileSelectValue():string {
         return this.fileSelectValue;
     }
+
 
     /**
      * gets the removed file value from the options panel component selected file list
@@ -36,6 +41,7 @@ export class OptionsPanelValueService {
         return this.fileRemoveValue;
     }
 
+
     /**
      * sets the values of the file list
      * @param {string[]} paraFileList
@@ -43,6 +49,16 @@ export class OptionsPanelValueService {
     public setFileList( paraFileList: string[] ) {
         this.fileList = paraFileList;
     }
+
+
+    /**
+     * sets the values of the file color list
+     * @param {} paraFileColorList
+     */
+    public setFileColorList( paraFileColorList: any ) {
+        this.fileColorList = paraFileColorList;
+    }
+
 
     /**
      * gets the values of the file list
@@ -52,6 +68,18 @@ export class OptionsPanelValueService {
         return this.fileList;
     }
 
+    /**
+     * searches in the fileColorList array for the color of the given filename
+     * @param {string} paraFileName
+     */
+    public getFileColorByFileName( paraFileName: string ){
+        return this.fileColorList[paraFileName].color;
+    }
+
+    /**
+     * returns a list of currently selected Files
+     * @returns {string[]}
+     */
     public getSelectedFileList(): string[] {
         return this.selectedFileList;
     }
