@@ -1,7 +1,12 @@
 <app-options-panel #optionsPanel
-        (switchViewEvent)="switchView( $event )"
+        (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
         (addFileToVisualizationEvent)="addFileToVisualization()"
-        (removeFileFromVisualizationEvent)="removeFileFromVisualization()">
+        (addCommitQualityToVisualizationEvent)="addCommitQualityToVisualization()"
+        (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
+        (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
+        (clearFileViewEvent)="clearFileView()"
+        (clearCommitViewEvent)="clearCommitView()"
+        (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()">
 </app-options-panel>
 <div id="trend-chart">
   <!--trend chart gets rendered here-->

@@ -13,4 +13,30 @@
       </div>
     </div>
   </div>
+  <div class="search-input-group">
+    <label>Set file quality metric</label>
+    <select>
+      <option>test</option>
+    </select>
+  </div>
+  <div class="search-input-group">
+    <label>Add commit quality to visualization</label>
+    <select (change)="setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( $event.target.value )">
+      <option value="m1">m1</option>
+      <option value="m2">m2</option>
+      <option value="m3">m3</option>
+    </select>
+    <div id="selected-commit-qualities-holder">
+      <div class="list-for-delete-panel"
+           *ngFor="let commitQuality of getCommitQualityList()">
+            {{commitQuality}}
+        <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
+      </div>
+    </div>
+  </div>
+  <div class="search-input-group">
+    <label>Customize View</label>
+    <div class="button" (click)="clearFileView()">Show Commits only</div>
+    <div class="button" (click)="clearCommitView()">Show Files only</div>
+  </div>
 </div>

@@ -9,9 +9,12 @@ export class OptionsPanelValueService {
 
     private fileSelectValue: string;
     private fileRemoveValue: string;
+    private commitQualityRemoveValue: string;
     private fileList: string[];
     private fileColorList: any;
     private selectedFileList: string[] = [];
+    private selectedCommitQualityList: string[] = [];
+    private commitQualitySelectValue: string;
 
 
     /**
@@ -23,6 +26,11 @@ export class OptionsPanelValueService {
         this.selectedFileList.push( paraValue );
     }
 
+    public setCommitQualitySelectValue( paraValue: string ){
+        this.commitQualitySelectValue = paraValue;
+        this.selectedCommitQualityList.push( paraValue );
+    }
+
 
     /**
      * gets the selected file value from the options panel component file dropdown
@@ -32,6 +40,10 @@ export class OptionsPanelValueService {
         return this.fileSelectValue;
     }
 
+    public getCommitQualitySelectValue():string {
+        return this.commitQualitySelectValue;
+    }
+
 
     /**
      * gets the removed file value from the options panel component selected file list
@@ -39,6 +51,10 @@ export class OptionsPanelValueService {
      */
     public getFileRemovedValue():string {
         return this.fileRemoveValue;
+    }
+
+    public getCommitQualityRemoveValue():string {
+        return this.commitQualityRemoveValue;
     }
 
 
@@ -84,6 +100,18 @@ export class OptionsPanelValueService {
         return this.selectedFileList;
     }
 
+    public getSelectedCommitQualityList(): string[] {
+        return this.selectedCommitQualityList;
+    }
+
+    /**
+     * returns a list of currently selected Files
+     * @returns {string[]}
+     */
+    public emptySelectedFileList(): void {
+        this.selectedFileList = [];
+    }
+
     /**
      * removes entry from the selected file list
      * @param paraValueToBeRemoved
@@ -94,6 +122,16 @@ export class OptionsPanelValueService {
         for (var i=this.selectedFileList.length-1; i>=0; i--) {
             if (this.selectedFileList[i] === paraValueToBeRemoved) {
                 this.selectedFileList.splice(i, 1);
+            }
+        }
+    }
+
+    public removeFromSelectedCommitQualityList( paraValueToBeRemoved ): void {
+        this.commitQualityRemoveValue = paraValueToBeRemoved;
+
+        for (var i=this.selectedCommitQualityList.length-1; i>=0; i--) {
+            if (this.selectedCommitQualityList[i] === paraValueToBeRemoved) {
+                this.selectedCommitQualityList.splice(i, 1);
             }
         }
     }
