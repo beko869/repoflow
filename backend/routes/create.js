@@ -11,7 +11,7 @@ router.get('/', (req, res, next)=>{
     res.send('giving me parameters you must!');
 });
 
-/* PUT repository data in db. */
+/* PUT (for idempotence) repository data in db. */
 router.put('/database', (req, res, next)=>{
     nodegitKit.open(path.resolve(__dirname, "../../.git"))
         .then((repo)=>{
