@@ -29,7 +29,7 @@ router.put('/database', (req, res, next)=>{
                                 //put all file differences in an array
                                 let fileDataArray = [];
                                 for( let j=0; j<diff.length;j++ ) {
-                                    fileDataArray.push( {"status":diff[j].status,"path":diff[j].path} )
+                                    fileDataArray.push( {"status":diff[j].status,"path":diff[j].path,"hunks":diff[j].hunks} )
                                 }
                                 return fileDataArray;
                             });
@@ -89,6 +89,7 @@ router.put('/database', (req, res, next)=>{
                                 "       commitId:@sha," +
                                 "       status:@status, " +
                                 "       color:@color," +
+                                "       hunks:@hunks," +
                                 "       quality_metric_1:@quality_metric_1, " +
                                 "       quality_metric_2:@quality_metric_2, " +
                                 "       quality_metric_3:@quality_metric_3 " +
@@ -99,6 +100,7 @@ router.put('/database', (req, res, next)=>{
                                     sha: commitDataArray[i].commit.commit_sha,
                                     status: fileArray[j].status,
                                     color: '#'+Math.floor(Math.random()*16777215).toString(16),
+                                    hunks: fileArray[j].hunks,
                                     quality_metric_1: Math.random(),
                                     quality_metric_2: Math.random(),
                                     quality_metric_3: Math.random()

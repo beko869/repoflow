@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 
 import * as d3 from 'd3';
 import * as d3Selection from 'd3-selection';
@@ -9,15 +9,20 @@ import * as d3TimeFormat from 'd3-time-format';
 import * as d3Shape from 'd3-shape';
 import * as d3Request from 'd3-request';
 import * as d3Zoom from 'd3-zoom';
+import * as moment from 'moment';
 import {environment} from "../../environments/environment";
 import {UtilityService} from '../shared/UtilityService';
 import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror';
+
 
 @Component({
     selector: 'app-trend-chart',
     templateUrl: './trend-chart.component.html',
     styleUrls: ['./trend-chart.component.css'],
-    providers: [UtilityService]
+    providers: [UtilityService],
+    encapsulation: ViewEncapsulation.None
 })
 
 export class TrendChartComponent implements OnInit {
@@ -34,24 +39,31 @@ export class TrendChartComponent implements OnInit {
     private trendVisualizationWrapper: any;
     private tooltip: any;
     private fileColorLookupArray: any;
+    private isFileDetailViewVisible: boolean;
+    private codeMirrorConfig;
 
     @ViewChild('optionsPanel') optionsPanel;
+    @ViewChild('codeMirrorInstance') codeMirrorInstance;
 
     constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService ) {
+
+        this.isFileDetailViewVisible = false;
+        this.codeMirrorConfig = {lineNumbers: true, mode: 'javascript'};
+
         this.margin = {top:20, right:100, bottom:60, left:30};
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
-        this.height = window.innerHeight * 0.9 - this.margin.top - this.margin.bottom;
+        this.height = window.innerHeight * 0.6 - this.margin.top - this.margin.bottom;
     }
 
     ngOnInit() {
         d3Request.json(environment.dataHost + 'read/initial_data', (error, data) => {
             this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
 
+            this.initTooltip();
             this.initSvg();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
-            this.initTooltip();
             this.renderAxis();
             this.initOptionsPanel( data["file-names"], this.fileColorLookupArray );
             //this.doCommitViewRequestAndRender( 'm1' );
@@ -89,7 +101,7 @@ export class TrendChartComponent implements OnInit {
     /**
      * renders the commit view with the given data array
      * @param paraData array containing commit nodes data
-     * @param paraCommitQuality array which metrics should be rendered
+     * @param paraCommitQuality string determining which commit quality gets rendered
      */
     public renderCommitView( paraData: any, paraCommitQuality: string ): void {
         this.renderCommitViewNodes( paraData["commit-nodes"], paraCommitQuality );
@@ -111,6 +123,7 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing commit classes
      */
     public clearCommitView( paraCommitQuality:string = null ): void {
+        this.clearFileDetailView();
         this.fadeFileViewToForeground();
 
         if( paraCommitQuality === null ){
@@ -128,6 +141,7 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing file classes
      */
     public clearFileView( paraFileName:string = null ): void {
+        this.clearFileDetailView();
         this.fadeCommitViewToForeGround();
 
         if( paraFileName === null ) {
@@ -138,6 +152,32 @@ export class TrendChartComponent implements OnInit {
             d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("")).remove();
             d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("")).remove();
         }
+    }
+
+
+    /**
+     * resets the trendVisualizationWrapper to visible
+     */
+    public clearFileDetailView(): void {
+        //this.isFileDetailViewVisible = false;
+        //this.trendVisualizationWrapper.attr("display","inline");
+    }
+
+    public showFileDetailView( paraCodeMirrorContent = "" ): void {
+
+        let doc = this.codeMirrorInstance.instance.getDoc();
+        doc.setValue( paraCodeMirrorContent );
+        doc.addLineClass( 5, "wrap", "goodLine")
+        doc.addLineClass( 6, "wrap", "notSureLine")
+        doc.addLineClass( 7, "wrap", "badLine")
+        doc.addLineClass( 10, "wrap", "badLine")
+        doc.addLineClass( 11, "wrap", "badLine")
+        doc.addLineClass( 13, "wrap", "goodLine")
+
+    }
+
+    public getFileDetailViewVisible(): boolean {
+        return this.isFileDetailViewVisible;
     }
 
 
@@ -179,7 +219,7 @@ export class TrendChartComponent implements OnInit {
     public initAxis(): void {
         //set axis with defined scales
         this.yAxis = d3Axis.axisRight(this.yScale);
-        this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%dT%H:%M:%S"));
+        this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%d"));
     }
 
     /**
@@ -225,8 +265,15 @@ export class TrendChartComponent implements OnInit {
      * @param paraTooltipContent the content to be displayed in the tooltip
      */
     public fadeInTooltip( paraTooltipContent: any ): void {
-        this.tooltip.transition().duration(200).style("opacity",0.9);
-        this.tooltip.html( paraTooltipContent ).style("left", (d3.event.pageX) + "px")
+
+        this.tooltip
+            .transition()
+            .duration(200)
+            .style("opacity",0.9);
+
+        this.tooltip
+            .html( paraTooltipContent )
+            .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY - 28) + "px");
     }
 
@@ -260,6 +307,7 @@ export class TrendChartComponent implements OnInit {
      * renders the commit nodes retrieved from the backend
      */
     public renderCommitViewNodes( paraCommitNodesData: any, paraQualityMetric: any ): void {
+        let that = this;
 
         this.trendVisualizationWrapper.append('g').selectAll('rect')
         .data(paraCommitNodesData)
@@ -283,12 +331,29 @@ export class TrendChartComponent implements OnInit {
             //return this.yScale( d.quality_metric_1*100 )
         })
         .attr('fill', 'teal')
-        .attr('r', (d)=>{ return d.fileCount*3 })
+        .attr('r', (d)=>{ return d.fileCount*2 })
         .attr('fill', 'teal')
-            .on("mouseover", (d) => {
-                console.log(d.id);
-                this.fadeInTooltip( d.id );
-            })
+            .on("mouseover", function(d) {
+
+                let qualityValue = 0;
+                //TODO besser machen
+                if( paraQualityMetric == "m1" ){
+                    qualityValue = d.quality_metric_1;
+                }
+                if( paraQualityMetric == "m2" ){
+                    qualityValue = d.quality_metric_2;
+                }
+                if( paraQualityMetric == "m3" ){
+                    qualityValue = d.quality_metric_3;
+                }
+                //TODO ende besser machen
+
+                that.fadeInTooltip(
+                    "Quality Value: " + Math.round( qualityValue*100*100 ) / 100 + " %<br/>" +
+                    "Commit Time: " + moment( d.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ) + "<br/>" +
+                    "SHA: " + d.id + "<br/>" +
+                    "Filecount: " + d.fileCount
+                )})
             .on("mouseout",(d)=>{
                 this.fadeOutTooltip();
             });
@@ -426,6 +491,7 @@ export class TrendChartComponent implements OnInit {
      * renders the commit nodes retrieved from the backend
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
+        let that = this; //for use in mouseover callback
 
         //add main dot to fileview nodes
         this.trendVisualizationWrapper.append('g').selectAll('rect')
@@ -436,12 +502,31 @@ export class TrendChartComponent implements OnInit {
             .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
             .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
             .attr('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-            .attr('r', 8)
-            .on("mouseover", (d) => {
-                this.fadeInTooltip( d.f.name );
+            .attr('r', 10)
+            .on("dblclick", (d) => {
+                console.log(d.f.hunks);
+                this.showFileDetailView( d.f.hunks.join() );
             })
-            .on("mouseout",(d)=>{
-                this.fadeOutTooltip();
+            .on("mouseover", function(d){
+                d3Selection.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr('r',16);
+
+                that.fadeInTooltip(
+                    "Quality Value: " + Math.round( d.f.quality_metric_1*100*100 ) / 100 + " %<br/>" +
+                                     "Commit Time: " + moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+
+
+                );
+            })
+            .on("mouseout", function(){
+                d3Selection.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr('r',8);
+
+                that.fadeOutTooltip();
             });
 
         //add middle dot to fileview nodes for better visibility
@@ -453,15 +538,7 @@ export class TrendChartComponent implements OnInit {
             .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
             .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
             .attr('fill', 'white')
-            .attr('r', 4)
-            .on("mouseover", (d) => {
-                this.fadeInTooltip( d.f.name );
-            })
-            .on("mouseout",(d)=>{
-                this.fadeOutTooltip();
-            });
-
-
+            .attr('r', 3);
     }
 
 

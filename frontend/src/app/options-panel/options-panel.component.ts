@@ -20,6 +20,8 @@ export class OptionsPanelComponent {
     @Output() removeCommitQualityFromVisualizationEvent = new EventEmitter<string>();
     @Output() clearFileViewEvent = new EventEmitter<string>();
     @Output() clearCommitViewEvent = new EventEmitter<string>();
+    @Output() clearFileDetailViewEvent = new EventEmitter<string>();
+    @Output() showFileDetailViewEvent = new EventEmitter<string>();
     @Output() addSelectedFileListToVisualizationEvent = new EventEmitter<string>();
     @Output() addSelectedCommitQualityListToVisualizationEvent = new EventEmitter<string>();
 
@@ -110,15 +112,39 @@ export class OptionsPanelComponent {
         this.ref.markForCheck();
     }
 
-    public clearFileView(): void {
-        this.clearFileViewEvent.emit();
+    public showCommitView(): void {
+        this.clearFileDetailView();
+        this.clearFileView();
         this.addSelectedCommitQualityListToVisualizationEvent.emit();
         this.ref.markForCheck();
     }
 
-    public clearCommitView(): void {
-        this.clearCommitViewEvent.emit();
+    public showFileView(): void {
+        this.clearFileDetailView();
+        this.clearCommmitView();
         this.addSelectedFileListToVisualizationEvent.emit();
         this.ref.markForCheck();
+
     }
+
+    public showFileDetailView(): void {
+        this.clearCommmitView();
+        this.clearFileView();
+        this.showFileDetailViewEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public clearFileDetailView(): void {
+        this.clearFileDetailViewEvent.emit();
+    }
+
+    public clearCommmitView(): void {
+        this.clearCommitViewEvent.emit();
+    }
+
+    public clearFileView(): void {
+        this.clearFileViewEvent.emit();
+    }
+
+
 }

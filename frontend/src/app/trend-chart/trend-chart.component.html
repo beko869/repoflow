@@ -6,9 +6,19 @@
         (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
         (clearFileViewEvent)="clearFileView()"
         (clearCommitViewEvent)="clearCommitView()"
-        (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()">
+        (clearFileDetailViewEvent)="clearFileDetailView()"
+        (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
+>
 </app-options-panel>
+
 <div id="trend-chart">
   <!--trend chart gets rendered here-->
 </div>
+<codemirror #codeMirrorInstance
+            [(ngModel)]="codeMirrorContent"
+            [config] = "codeMirrorConfig"
+>
+</codemirror>
+
+
 
