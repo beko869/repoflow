@@ -3,6 +3,7 @@ const path = require('path');
 const nodegitKit = require('nodegit-kit');
 const Promise = require('bluebird');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection')
+const colorScheme = require('../colorScheme');
 const router = express.Router();
 
 
@@ -29,7 +30,7 @@ router.put('/database', (req, res, next)=>{
                                 //put all file differences in an array
                                 let fileDataArray = [];
                                 for( let j=0; j<diff.length;j++ ) {
-                                    fileDataArray.push( {"status":diff[j].status,"path":diff[j].path,"hunks":diff[j].hunks} )
+                                    fileDataArray.push( { "status":diff[j].status,"path":diff[j].path,"hunks":diff[j].hunks } );
                                 }
                                 return fileDataArray;
                             });
@@ -52,9 +53,13 @@ router.put('/database', (req, res, next)=>{
                     });
                 })
                 .then(( commitDataArray )=>{
+
+                   let commitInsertPromises = [];
+                   let fileInsertPromises = [];
+
                    for( let i = 0; i<commitDataArray.length; i++ ){
                         //insert commit data
-                       arangoDatabaseConnection.query(
+                       commitInsertPromises.push( arangoDatabaseConnection.query(
                             "INSERT " +
                             "   {   id:@sha, " +
                             "       name:@message, " +
@@ -77,45 +82,82 @@ router.put('/database', (req, res, next)=>{
                                 quality_metric_3: Math.random(),
                                 fileCount: commitDataArray[i].files.length,
                                 author: commitDataArray[i].commit.author
-                            });
+                            }).then( (commitInsertResult) => { return { "commitInsertResult":commitInsertResult["_result"] }; } ));
 
                         let fileArray = commitDataArray[i].files;
                         
                         for( let j = 0; j<fileArray.length; j++ ){
                             //insert file data
-                            arangoDatabaseConnection.query(
-                                "INSERT " +
-                                "   {   name:@name," +
-                                "       commitId:@sha," +
-                                "       status:@status, " +
-                                "       color:@color," +
-                                "       hunks:@hunks," +
-                                "       quality_metric_1:@quality_metric_1, " +
-                                "       quality_metric_2:@quality_metric_2, " +
-                                "       quality_metric_3:@quality_metric_3 " +
-                                "   } " +
-                                "IN file " +
-                                "RETURN NEW",
+                            fileInsertPromises.push( arangoDatabaseConnection.query(
+                                `INSERT
+                                   {   name:@name,
+                                       commitId:@sha,
+                                       status:@status,
+                                       hunks:@hunks,
+                                       quality_metric_1:@quality_metric_1,
+                                       quality_metric_2:@quality_metric_2,
+                                       quality_metric_3:@quality_metric_3
+                                   }
+                                IN file
+                                RETURN NEW`,
                                 {   name: fileArray[j].path,
                                     sha: commitDataArray[i].commit.commit_sha,
                                     status: fileArray[j].status,
-                                    color: '#'+Math.floor(Math.random()*16777215).toString(16),
                                     hunks: fileArray[j].hunks,
                                     quality_metric_1: Math.random(),
                                     quality_metric_2: Math.random(),
                                     quality_metric_3: Math.random()
                                 })
-                            .then((data)=>{
-                                arangoDatabaseConnection.query( "UPSERT {name: @filename} INSERT {name: @filename,color: @color}UPDATE {}IN file_color RETURN {file_color: NEW}",
-                                    { filename: data["_result"][0].name,
-                                      color: '#'+Math.floor(Math.random()*16777215).toString(16)
-                                    });
-                            });
+                            .then((insertedFileData)=>{
+                                let resultData = insertedFileData;
+                                //insert file color entry if name in file color document does not exist yet
+                                return arangoDatabaseConnection.query(
+                                    `UPSERT 
+                                        {   name: @filename } 
+                                     INSERT 
+                                        {   name: @filename,
+                                            color: @color
+                                        }
+                                     UPDATE 
+                                        {}
+                                     IN 
+                                        file_color 
+                                     RETURN 
+                                        {   file_color: NEW }`,
+                                    { filename: insertedFileData["_result"][0].name,
+                                      color: ''
+                                    }).then( (insertedColorData) => { return {"fileInsertResult":resultData["_result"], "fileColorInsertResult":insertedColorData["_result"]} } );
+                            }));
                         }
                     }
 
-                    //TODO richtig promisen und status retournieren
-                    res.send( commitDataArray );
+                    //resolve the data promise array that holds commit and file data
+                    return Promise.map( [commitInsertPromises,fileInsertPromises], ( values )=>{
+                        return Promise.props( values );
+                    });
+                }).then( ( result ) => {
+
+                    //get all unique file_color keys to set color from color scheme
+                    let fileColorKeys = [];
+                    for(var x in result[1]){
+                        let fileColorKey = result[1][x].fileColorInsertResult[0].file_color._key;
+                        if( !fileColorKeys.includes( fileColorKey ) ) {
+                            fileColorKeys.push(fileColorKey);
+                        }
+                    }
+
+                    fileColorKeys.forEach( (key,i)=>{
+                        //update colors
+                        arangoDatabaseConnection.query(
+                            `       UPDATE  
+                                        @key
+                                     WITH {
+                                        color: @color }
+                                     IN file_color`,{key:key, color:colorScheme[i]});
+                    });
+
+                    //TODO color zeug noch promisen und status anpassen
+                    res.send( {status:200, message:"Database created!"} )
                 });
         });
 });

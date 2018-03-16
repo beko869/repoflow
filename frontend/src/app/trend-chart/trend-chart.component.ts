@@ -43,7 +43,7 @@ export class TrendChartComponent implements OnInit {
     private codeMirrorConfig;
 
     @ViewChild('optionsPanel') optionsPanel;
-    @ViewChild('codeMirrorInstance') codeMirrorInstance;
+    @ViewChild('codeMirrorInstance') codeMirrorInstance;4
 
     constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService ) {
 

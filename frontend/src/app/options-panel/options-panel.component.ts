@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter,
     Output
 } from '@angular/core';
+
 import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
 
 @Component({
@@ -24,8 +25,10 @@ export class OptionsPanelComponent {
     @Output() showFileDetailViewEvent = new EventEmitter<string>();
     @Output() addSelectedFileListToVisualizationEvent = new EventEmitter<string>();
     @Output() addSelectedCommitQualityListToVisualizationEvent = new EventEmitter<string>();
+    private selectOptions: any;
 
     constructor( private optionsPanelValueService:OptionsPanelValueService, private ref:ChangeDetectorRef ) {
+        this.selectOptions = {"width":"100%"}
     }
 
 
@@ -63,8 +66,17 @@ export class OptionsPanelComponent {
      * uses the optionsPanelValueService to return the list of all files
      * @returns {string[]}
      */
-    public getFileListForSelect(): string[] {
-        return this.optionsPanelValueService.getFileList();
+    public getFileListForSelect(): any {
+        return this.optionsPanelValueService.getFileList();;
+    }
+
+    /**
+     * uses the optionsPanelValueService to return the list of all commit qualities
+     * @returns {string[]}
+     */
+    public getCommitQualityListForSelect(): any {
+        //TODO real data
+        return [{"id":"m1","text":"m1"},{"id":"m2","text":"m2"},{"id":"m3","text":"m3"}];
     }
 
     /**
@@ -100,8 +112,8 @@ export class OptionsPanelComponent {
      * adds a value from the selected list with the optionspanelvalueservice, emits a addFileToVisualizationEvent and marks the optionspanel component for refresh
      * @param {string} paraValue
      */
-    public setFileSelectValueAndEmitAddFileToVisualizationEvent( paraValue:string ): void {
-        this.optionsPanelValueService.setFileSelectValue( paraValue );
+    public setFileSelectValueAndEmitAddFileToVisualizationEvent( paraOption: any ): void {
+        this.optionsPanelValueService.setFileSelectValue( paraOption );
         this.addFileToVisualizationEvent.emit();
         this.ref.markForCheck();
     }
@@ -110,6 +122,10 @@ export class OptionsPanelComponent {
         this.optionsPanelValueService.setCommitQualitySelectValue( paraValue );
         this.addCommitQualityToVisualizationEvent.emit();
         this.ref.markForCheck();
+    }
+
+    public getSelectLayoutOptions(){
+        return this.selectOptions;
     }
 
     public showCommitView(): void {

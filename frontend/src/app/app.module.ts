@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { Angular2FontawesomeModule } from 'angular2-fontawesome';
 import { CodemirrorModule } from 'ng2-codemirror';
 import { FormsModule } from '@angular/forms';
+import { Select2Module } from "ng2-select2";
 
 import { AppComponent } from './app.component';
 import { OptionsPanelComponent } from './options-panel/options-panel.component';
@@ -22,6 +23,7 @@ import { UtilityService } from "./shared/UtilityService";
     Angular2FontawesomeModule,
     CodemirrorModule,
     FormsModule,
+    Select2Module,
     RouterModule.forRoot([
         {
           path: 'trend',

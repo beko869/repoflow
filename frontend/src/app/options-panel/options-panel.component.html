@@ -1,9 +1,11 @@
 <div class="filter-area">
   <div class="search-input-group">
     <label>Add file to visualization</label>
-    <select (change)="setFileSelectValueAndEmitAddFileToVisualizationEvent( $event.target.value )">
-      <option *ngFor="let i of getFileListForSelect()" value="{{i}}">{{i}}</option>
-    </select>
+    <select2 [data]="getFileListForSelect()"
+             [options]="getSelectLayoutOptions()"
+             (valueChanged)="setFileSelectValueAndEmitAddFileToVisualizationEvent($event.value)">
+    </select2>
+
     <div id="selected-files-holder">
       <div class="list-for-delete-panel"
            *ngFor="let file of getSelectedFileList()"
@@ -21,11 +23,11 @@
   </div>
   <div class="search-input-group">
     <label>Add commit quality to visualization</label>
-    <select (change)="setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( $event.target.value )">
-      <option value="m1">m1</option>
-      <option value="m2">m2</option>
-      <option value="m3">m3</option>
-    </select>
+    <select2 [data]="getCommitQualityListForSelect()"
+             [options]="getSelectLayoutOptions()"
+             (valueChanged)="setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( $event.value )">
+    </select2>
+
     <div id="selected-commit-qualities-holder">
       <div class="list-for-delete-panel"
            *ngFor="let commitQuality of getCommitQualityList()">
