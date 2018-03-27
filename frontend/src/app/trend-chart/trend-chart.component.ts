@@ -35,6 +35,7 @@ export class TrendChartComponent implements OnInit {
     private yAxis: any;
     private xAxis: any;
     private renderedXAxis: any;
+    private renderedYAxis: any;
     private xZoom: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
@@ -61,10 +62,10 @@ export class TrendChartComponent implements OnInit {
             this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
 
             this.initTooltip();
-            this.initSvg();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
-            this.renderAxis();
+            this.initSvg();
+            //this.renderAxis();
             this.initOptionsPanel( data["file-names"], this.fileColorLookupArray );
             //this.doCommitViewRequestAndRender( 'm1' );
 
@@ -192,8 +193,42 @@ export class TrendChartComponent implements OnInit {
             .attr('height', this.height + this.margin.top + this.margin.bottom)
             .append("g")
             .attr("transform","translate("+this.margin.left+","+this.margin.top + ")");
+
+        this.renderedYAxis = this.trendVisualizationWrapper.append("g")
+            .attr("class","yaxis")
+            .call(this.yAxis);
+
+        this.renderedXAxis = this.trendVisualizationWrapper.append("g")
+            .attr("class","xaxis")
+            .attr("transform", "translate(0," + this.height + ")")
+            .call(this.xAxis);
+            //.selectAll("text")
+            //.attr("transform","rotate(-65)");
+
+        this.renderedXAxis.call( d3Zoom.zoom().on("zoom", ()=>{
+                console.log("zooming/panning");
+                let new_xScale = d3Selection.event.transform.rescaleX( this.xScale );
+                // update axes
+
+                const line = d3Shape.line()
+                    .x((d)=>{ console.log(new_xScale( new Date(d[ 'x' ]))); return new_xScale( new Date(d[ 'x' ]) ) })
+                    .y((d)=>{ return d[ 'y' ] })
+                    .curve(d3Shape.curveMonotoneX);
+
+                this.renderedXAxis.call( this.xAxis.scale(new_xScale) );
+                this.trendVisualizationWrapper.selectAll(".file-view-node").attr( "cx", (d)=>{ return new_xScale( new Date(d.c.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".file-view-link").attr( "d", line );
+
+            } ) );
+
     }
 
+    public initZoom(): void{
+        console.log(this);
+
+        // create new scale ojects based on event
+
+    }
 
     /**
      * initializes the scales for this visualization
@@ -221,24 +256,6 @@ export class TrendChartComponent implements OnInit {
         this.yAxis = d3Axis.axisRight(this.yScale);
         this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%d"));
     }
-
-    /**
-     * initializes the x axis zoom
-     */
-    public initXZoom(): void {
-
-        //d3Zoom.zoom().newScale()
-
-        this.xZoom = d3Zoom.zoom().scaleExtent([1,10]).on("zoom", this.updateXZoom());
-
-        //set zoom on x axis
-        //this.renderedXAxis.call( this.xAxis.scale( d3Zoom.transform.rescaleX(this.xScale) ) )
-    }
-
-    public updateXZoom(): void {
-        this.trendVisualizationWrapper.call(this.xZoom);
-    }
-
 
     /**
      * initializes a transparent div element with class tooltip
@@ -271,10 +288,13 @@ export class TrendChartComponent implements OnInit {
             .duration(200)
             .style("opacity",0.9);
 
+
+        console.log( d3 );
+
         this.tooltip
             .html( paraTooltipContent )
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
+            .style("left", "0px")
+            .style("top", "400px");
     }
 
 
@@ -504,7 +524,6 @@ export class TrendChartComponent implements OnInit {
             .attr('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10)
             .on("dblclick", (d) => {
-                console.log(d.f.hunks);
                 this.showFileDetailView( d.f.hunks.join() );
             })
             .on("mouseover", function(d){
