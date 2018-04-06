@@ -106,7 +106,8 @@ export class TrendChartComponent implements OnInit {
      */
     public renderCommitView( paraData: any, paraCommitQuality: string ): void {
         this.renderCommitViewNodes( paraData["commit-nodes"], paraCommitQuality );
-        this.renderCommitViewLinks( paraData["commit-nodes"], paraCommitQuality );
+        //this.renderCommitViewLinks( paraData["commit-nodes"], paraCommitQuality );
+        this.renderCommitViewBalloonLines( paraData["commit-nodes"], paraCommitQuality );
     }
 
 
@@ -216,8 +217,16 @@ export class TrendChartComponent implements OnInit {
                     .curve(d3Shape.curveMonotoneX);
 
                 this.renderedXAxis.call( this.xAxis.scale(new_xScale) );
-                this.trendVisualizationWrapper.selectAll(".file-view-node").attr( "cx", (d)=>{ return new_xScale( new Date(d.c.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".file-view-link").attr( "d", line );
+                this.trendVisualizationWrapper.selectAll(".file-view-node")
+                    .attr( "cx", (d)=>{ return new_xScale( new Date(d.c.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".file-view-link")
+                    .attr( "d", line );
+
+                this.trendVisualizationWrapper.selectAll(".commit-view-node")
+                    .attr( "cx", (d)=>{ return new_xScale( new Date(d.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
+                    .attr( "x1", (d)=>{ return new_xScale( new Date(d.datetime) ) } )
+                    .attr( "x2", (d)=>{ return new_xScale( new Date(d.datetime) ) } );
 
             } ) );
 
@@ -379,7 +388,38 @@ export class TrendChartComponent implements OnInit {
             });
     }
 
+    /**
+    * renders vertical lines from x-axis to commit node
+     */
+    public renderCommitViewBalloonLines( paraCommitNodesData: any, paraQualityMetric: any ): void {
+        //let that = this;
 
+        this.trendVisualizationWrapper.append('g').selectAll('rect')
+            .data(paraCommitNodesData)
+            .enter()
+            .append('line')
+            .attr('class','commit-view-balloon-line '+paraQualityMetric)
+            .attr('x1', (d)=>{ return this.xScale( new Date(d.datetime) ) })
+            .attr('x2', (d)=>{ return this.xScale( new Date(d.datetime) ) })
+            .attr('y1', this.height )
+            .attr('y2', (d)=>{
+
+                //TODO besser machen
+                if( paraQualityMetric == "m1" ){
+                    return this.yScale( d.quality_metric_1*100 )
+                }
+                if( paraQualityMetric == "m2" ){
+                    return this.yScale( d.quality_metric_2*100 )
+                }
+                if( paraQualityMetric == "m3" ){
+                    return this.yScale( d.quality_metric_3*100 )
+                }
+                //TODO ende besser machen
+                //return this.yScale( d.quality_metric_1*100 )
+            })
+            .attr("stroke-width", 2)
+            .attr("stroke", "red");
+    }
     /**
      * renders links based on the order of commits
      * @param paraCommitNodesData commit data as array from the backend
@@ -606,6 +646,7 @@ export class TrendChartComponent implements OnInit {
     public fadeCommitViewToBackground(): void {
         d3Selection.selectAll('.commit-view-node').transition().duration(700).style("opacity", 0.15);
         d3Selection.selectAll('.commit-view-link').transition().duration(700).style("opacity", 0.15);
+        d3Selection.selectAll('.commit-view-balloon-line').transition().duration(700).style("opacity", 0.15);
     }
 
 
