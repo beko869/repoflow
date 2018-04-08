@@ -195,8 +195,10 @@ export class TrendChartComponent implements OnInit {
             .append("svg")
             .attr('width', this.width + this.margin.left + this.margin.right)
             .attr('height', this.height + this.margin.top + this.margin.bottom)
-            .append("g")
             .attr("transform","translate(0,"+this.margin.top + ")");
+
+        //.append("g")
+            //.attr("transform","translate(0,"+this.margin.top + ")");
 
         this.trendVisualizationWrapper
             .append("defs")
@@ -206,10 +208,7 @@ export class TrendChartComponent implements OnInit {
             .attr("x",0)
             .attr("y",0)
             .attr("width",this.width)
-            .attr("height",this.height)
-        ;
-
-
+            .attr("height",this.height);
 
     }
 
@@ -244,7 +243,7 @@ export class TrendChartComponent implements OnInit {
     public initAxis(): void {
         //set axis with defined scales
         this.yAxis = d3Axis.axisRight(this.yScale);
-        this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%Y-%m-%d"));
+        this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m.%Y"));
     }
 
     /**
@@ -304,32 +303,40 @@ export class TrendChartComponent implements OnInit {
         this.renderedXAxis = this.trendVisualizationWrapper.append("g")
             .attr("class","xaxis")
             .attr("transform", "translate(0," + this.height + ")")
+            .append("g")
             .call(this.xAxis);
 
+            this.trendVisualizationWrapper.call( d3Zoom.zoom().on("zoom", ()=>{
 
-        this.renderedXAxis.call( d3Zoom.zoom().on("zoom", ()=>{
+                //format x-axis to display hours and minutes at a specific scaling threshold
+                if( d3Selection.event.transform.k > 7 ){
+                    this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m. %H:%M"));
+                }
+                else {
+                    this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m.%Y"));
+                }
 
-            this.xScaleZoomed = d3Selection.event.transform.rescaleX( this.xScale );
-            this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
+                this.xScaleZoomed = d3Selection.event.transform.rescaleX( this.xScale );
+                this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
 
-            const line = d3Shape.line()
-                .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ) })
-                .y((d)=>{ return this.yScale( d[ 'y' ] ) })
-                .curve(d3Shape.curveMonotoneX);
+                const line = d3Shape.line()
+                    .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ) })
+                    .y((d)=>{ return this.yScale( d[ 'y' ] ) })
+                    .curve(d3Shape.curveMonotoneX);
 
-            //scale file stuff to zoom scale
-            this.trendVisualizationWrapper.selectAll(".file-view-node")
-                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
-            this.trendVisualizationWrapper.selectAll(".file-view-link")
-                .attr( "d", line );
+                //scale file stuff to zoom scale
+                this.trendVisualizationWrapper.selectAll(".file-view-node")
+                    .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".file-view-link")
+                    .attr( "d", line );
 
 
-            //scale commit stuff to zoom scale
-            this.trendVisualizationWrapper.selectAll(".commit-view-node")
-                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
-            this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
-                .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
-                .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+                //scale commit stuff to zoom scale
+                this.trendVisualizationWrapper.selectAll(".commit-view-node")
+                    .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
+                    .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
+                    .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
 
         } ) );
     }
