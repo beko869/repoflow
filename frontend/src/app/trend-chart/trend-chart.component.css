@@ -47,6 +47,10 @@ codemirror{
 
 .file-view-node {
     cursor:pointer;
+    stroke-width: 2px;
+    fill: #fff;
+    clip-path: stroke-box;
+
 }
 
 .commit-view-node {

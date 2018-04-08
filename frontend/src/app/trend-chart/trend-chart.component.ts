@@ -36,7 +36,7 @@ export class TrendChartComponent implements OnInit {
     private xAxis: any;
     private renderedXAxis: any;
     private renderedYAxis: any;
-    private xZoom: any;
+    private xScaleZoomed: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
     private fileColorLookupArray: any;
@@ -55,6 +55,8 @@ export class TrendChartComponent implements OnInit {
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
         this.height = window.innerHeight * 0.6 - this.margin.top - this.margin.bottom;
+
+        this.xScaleZoomed = null;
     }
 
     ngOnInit() {
@@ -65,11 +67,9 @@ export class TrendChartComponent implements OnInit {
             this.initScales( data["commit-nodes"] );
             this.initAxis();
             this.initSvg();
-            //this.renderAxis();
+            this.renderAxis();
             this.initOptionsPanel( data["file-names"], this.fileColorLookupArray );
-            //this.doCommitViewRequestAndRender( 'm1' );
 
-            //this.initXZoom();
         })
     }
 
@@ -131,10 +131,12 @@ export class TrendChartComponent implements OnInit {
         if( paraCommitQuality === null ){
             d3Selection.selectAll('.commit-view-node').remove();
             d3Selection.selectAll('.commit-view-link').remove();
+            d3Selection.selectAll('.commit-view-balloon-line').remove();
         }
         else {
             d3Selection.selectAll('.commit-view-node.' + paraCommitQuality ).remove();
             d3Selection.selectAll('.commit-view-link.' + paraCommitQuality ).remove();
+            d3Selection.selectAll('.commit-view-balloon-line.' + paraCommitQuality ).remove();
         }
     }
 
@@ -178,13 +180,14 @@ export class TrendChartComponent implements OnInit {
 
     }
 
-    public getFileDetailViewVisible(): boolean {
+    /*public getFileDetailViewVisible(): boolean {
         return this.isFileDetailViewVisible;
-    }
+    }*/
 
 
     /**
      * initializes an svg element in the div area of the visualization
+     * sets zoom functions to x-axis
      */
     public initSvg(): void {
         //select div where svg will be rendered in
@@ -193,51 +196,23 @@ export class TrendChartComponent implements OnInit {
             .attr('width', this.width + this.margin.left + this.margin.right)
             .attr('height', this.height + this.margin.top + this.margin.bottom)
             .append("g")
-            .attr("transform","translate("+this.margin.left+","+this.margin.top + ")");
+            .attr("transform","translate(0,"+this.margin.top + ")");
 
-        this.renderedYAxis = this.trendVisualizationWrapper.append("g")
-            .attr("class","yaxis")
-            .call(this.yAxis);
+        this.trendVisualizationWrapper
+            .append("defs")
+            .append("clipPath")
+            .attr("id", "clipper")
+            .append("rect")
+            .attr("x",0)
+            .attr("y",0)
+            .attr("width",this.width)
+            .attr("height",this.height)
+        ;
 
-        this.renderedXAxis = this.trendVisualizationWrapper.append("g")
-            .attr("class","xaxis")
-            .attr("transform", "translate(0," + this.height + ")")
-            .call(this.xAxis);
-            //.selectAll("text")
-            //.attr("transform","rotate(-65)");
 
-        this.renderedXAxis.call( d3Zoom.zoom().on("zoom", ()=>{
-                console.log("zooming/panning");
-                let new_xScale = d3Selection.event.transform.rescaleX( this.xScale );
-                // update axes
-
-                const line = d3Shape.line()
-                    .x((d)=>{ console.log(new_xScale( new Date(d[ 'x' ]))); return new_xScale( new Date(d[ 'x' ]) ) })
-                    .y((d)=>{ return d[ 'y' ] })
-                    .curve(d3Shape.curveMonotoneX);
-
-                this.renderedXAxis.call( this.xAxis.scale(new_xScale) );
-                this.trendVisualizationWrapper.selectAll(".file-view-node")
-                    .attr( "cx", (d)=>{ return new_xScale( new Date(d.c.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".file-view-link")
-                    .attr( "d", line );
-
-                this.trendVisualizationWrapper.selectAll(".commit-view-node")
-                    .attr( "cx", (d)=>{ return new_xScale( new Date(d.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
-                    .attr( "x1", (d)=>{ return new_xScale( new Date(d.datetime) ) } )
-                    .attr( "x2", (d)=>{ return new_xScale( new Date(d.datetime) ) } );
-
-            } ) );
 
     }
 
-    public initZoom(): void{
-        console.log(this);
-
-        // create new scale ojects based on event
-
-    }
 
     /**
      * initializes the scales for this visualization
@@ -256,6 +231,12 @@ export class TrendChartComponent implements OnInit {
             .range( [0, this.width] );
     }
 
+    /**
+     * returns the current xscale based on zoom level (if not zoomed, returns default xscale)
+     */
+    public getCurrentXScale(): any {
+        return ( this.xScaleZoomed == null ? this.xScale : this.xScaleZoomed );
+    }
 
     /**
      * initializes the x and y axis with the corresponding scales
@@ -297,9 +278,6 @@ export class TrendChartComponent implements OnInit {
             .duration(200)
             .style("opacity",0.9);
 
-
-        console.log( d3 );
-
         this.tooltip
             .html( paraTooltipContent )
             .style("left", "0px")
@@ -319,16 +297,41 @@ export class TrendChartComponent implements OnInit {
      * renders the axis with the initialized values to the svg
      */
     public renderAxis(): void {
-        this.trendVisualizationWrapper.append("g")
+        this.renderedYAxis = this.trendVisualizationWrapper.append("g")
             .attr("class","yaxis")
             .call(this.yAxis);
 
         this.renderedXAxis = this.trendVisualizationWrapper.append("g")
             .attr("class","xaxis")
             .attr("transform", "translate(0," + this.height + ")")
-            .call(this.xAxis)
-            .selectAll("text")
-            .attr("transform","rotate(-65)");
+            .call(this.xAxis);
+
+
+        this.renderedXAxis.call( d3Zoom.zoom().on("zoom", ()=>{
+
+            this.xScaleZoomed = d3Selection.event.transform.rescaleX( this.xScale );
+            this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
+
+            const line = d3Shape.line()
+                .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ) })
+                .y((d)=>{ return this.yScale( d[ 'y' ] ) })
+                .curve(d3Shape.curveMonotoneX);
+
+            //scale file stuff to zoom scale
+            this.trendVisualizationWrapper.selectAll(".file-view-node")
+                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
+            this.trendVisualizationWrapper.selectAll(".file-view-link")
+                .attr( "d", line );
+
+
+            //scale commit stuff to zoom scale
+            this.trendVisualizationWrapper.selectAll(".commit-view-node")
+                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+            this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
+                .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
+                .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+
+        } ) );
     }
 
 
@@ -337,13 +340,14 @@ export class TrendChartComponent implements OnInit {
      */
     public renderCommitViewNodes( paraCommitNodesData: any, paraQualityMetric: any ): void {
         let that = this;
+        let currentXScale = this.getCurrentXScale();
 
         this.trendVisualizationWrapper.append('g').selectAll('rect')
         .data(paraCommitNodesData)
         .enter()
         .append('circle')
         .attr('class','commit-view-node '+paraQualityMetric)
-        .attr('cx', (d)=>{ return this.xScale( new Date(d.datetime) ) })
+        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
         .attr('cy', (d)=>{
 
             //TODO besser machen
@@ -393,14 +397,15 @@ export class TrendChartComponent implements OnInit {
      */
     public renderCommitViewBalloonLines( paraCommitNodesData: any, paraQualityMetric: any ): void {
         //let that = this;
+        let currentXScale = this.getCurrentXScale();
 
         this.trendVisualizationWrapper.append('g').selectAll('rect')
             .data(paraCommitNodesData)
             .enter()
             .append('line')
             .attr('class','commit-view-balloon-line '+paraQualityMetric)
-            .attr('x1', (d)=>{ return this.xScale( new Date(d.datetime) ) })
-            .attr('x2', (d)=>{ return this.xScale( new Date(d.datetime) ) })
+            .attr('x1', (d)=>{ return currentXScale( new Date(d.datetime) ) })
+            .attr('x2', (d)=>{ return currentXScale( new Date(d.datetime) ) })
             .attr('y1', this.height )
             .attr('y2', (d)=>{
 
@@ -552,6 +557,7 @@ export class TrendChartComponent implements OnInit {
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
         let that = this; //for use in mouseover callback
+        let currentXScale = this.getCurrentXScale();
 
         //add main dot to fileview nodes
         this.trendVisualizationWrapper.append('g').selectAll('rect')
@@ -559,9 +565,9 @@ export class TrendChartComponent implements OnInit {
             .enter()
             .append('circle')
             .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
-            .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
+            .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
             .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
-            .attr('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
+            .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10)
             .on("dblclick", (d) => {
                 this.showFileDetailView( d.f.hunks.join() );
@@ -583,21 +589,10 @@ export class TrendChartComponent implements OnInit {
                 d3Selection.select(this)
                     .transition()
                     .duration(200)
-                    .attr('r',8);
+                    .attr('r',10);
 
                 that.fadeOutTooltip();
             });
-
-        //add middle dot to fileview nodes for better visibility
-        this.trendVisualizationWrapper.append('g').selectAll('rect')
-            .data(paraFileNodesData)
-            .enter()
-            .append('circle')
-            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
-            .attr('cx', (d)=>{ return this.xScale( new Date(d.c.datetime) ) })
-            .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
-            .attr('fill', 'white')
-            .attr('r', 3);
     }
 
 
@@ -607,10 +602,12 @@ export class TrendChartComponent implements OnInit {
      * @param paraFileLinksData file path data as array from the backend
      */
     public renderFileViewFileLinks( paraFileLinksData: any ): void {
+        let currentXScale = this.getCurrentXScale();
+
         //d3 line generator
         const line = d3Shape.line()
-            .x((d)=>{ return d[ 'x' ] })
-            .y((d)=>{ return d[ 'y' ] })
+            .x((d)=>{ return currentXScale( d[ 'x' ] ) })
+            .y((d)=>{ return this.yScale( d[ 'y' ] ) })
             .curve(d3Shape.curveMonotoneX);
 
         let fileLinkArray = [];
@@ -619,8 +616,8 @@ export class TrendChartComponent implements OnInit {
 
         filesSortyByCommitDatetime.forEach( (file,i)=>{
             fileLinkArray.push({
-                "x": this.xScale( new Date(file.c.datetime) ),
-                "y": this.yScale( file.f.quality_metric_1*100 ),
+                "x": new Date(file.c.datetime),
+                "y": file.f.quality_metric_1*100,
                 "color": file.f.color,
                 "name": file.f.name
             });
@@ -637,7 +634,8 @@ export class TrendChartComponent implements OnInit {
             .attr("stroke-linejoin", "round")
             .attr("stroke-linecap", "round")
             .attr("stroke-width", 3)
-            .attr("d", line);
+            .attr("d", line)
+            .attr("clip-path","url(#clipper)");
     }
 
     /**
