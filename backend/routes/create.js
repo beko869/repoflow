@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const nodegitKit = require('nodegit-kit');
+const nodegit = require('nodegit');
 const Promise = require('bluebird');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection')
 const colorScheme = require('../colorScheme');
@@ -94,6 +95,7 @@ router.put('/database', (req, res, next)=>{
                                        commitId:@sha,
                                        status:@status,
                                        hunks:@hunks,
+                                       fileContent:@fileContent,
                                        quality_metric_1:@quality_metric_1,
                                        quality_metric_2:@quality_metric_2,
                                        quality_metric_3:@quality_metric_3
@@ -104,6 +106,7 @@ router.put('/database', (req, res, next)=>{
                                     sha: commitDataArray[i].commit.commit_sha,
                                     status: fileArray[j].status,
                                     hunks: fileArray[j].hunks,
+                                    fileContent: '',
                                     quality_metric_1: Math.random(),
                                     quality_metric_2: Math.random(),
                                     quality_metric_3: Math.random()
@@ -139,27 +142,125 @@ router.put('/database', (req, res, next)=>{
 
                     //get all unique file_color keys to set color from color scheme
                     let fileColorKeys = [];
-                    for(var x in result[1]){
+                    for( let x in result[1] ){
                         let fileColorKey = result[1][x].fileColorInsertResult[0].file_color._key;
                         if( !fileColorKeys.includes( fileColorKey ) ) {
                             fileColorKeys.push(fileColorKey);
                         }
                     }
 
+                    let colorUpdatePromises = [];
+
                     fileColorKeys.forEach( (key,i)=>{
                         //update colors
-                        arangoDatabaseConnection.query(
+                        colorUpdatePromises.push( arangoDatabaseConnection.query(
                             `       UPDATE  
                                         @key
                                      WITH {
                                         color: @color }
-                                     IN file_color`,{key:key, color:colorScheme[i]});
+                                     IN file_color`,{key:key, color:colorScheme[i]}));
                     });
 
-                    //TODO color zeug noch promisen und status anpassen
-                    res.send( {status:200, message:"Database created!"} )
-                });
+                    return Promise.map( colorUpdatePromises, ( values )=>{
+                        return Promise.props( values );
+                    });
+
+                }).then( ( colorUpdateResult ) => {
+                    //update file entries with file content
+                    return arangoDatabaseConnection.query( "FOR f IN file RETURN f" )
+                        .then( (queryResult)=>{
+                            let fileResult = queryResult._result;
+                            let fileUpdatePromises = [];
+
+                            for( let i=0;i<fileResult.length;i++ ) {
+                                nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
+                                    .then(function(repo) {
+
+                                        nodegit.Commit.lookup(repo, fileResult[i].commitId)
+                                            .then((commit) => {
+
+                                                commit.getEntry(fileResult[i].name)
+                                                    .then((entry) => {
+                                                        entry.getBlob().then((blob) => {
+                                                            //if( entry.sha() == fileResult[i].commitId ) {
+
+                                                            fileUpdatePromises.push(arangoDatabaseConnection.query(
+                                                                `UPDATE  
+                                                                @key
+                                                             WITH {
+                                                                fileContent: @fileContent }
+                                                             IN 
+                                                                file`, {
+                                                                    key: fileResult[i]._key,
+                                                                    fileContent: String(blob)
+                                                                }));
+                                                            //}
+                                                        });
+                                                    });
+                                            });
+                                    });
+                            }
+                        })
+                }).then( () => {
+                    res.send( {status:200, message:"Database created!"} );
+                } );
         });
+});
+
+router.put('/test', (req, res, next)=>{
+    arangoDatabaseConnection.query( "FOR f IN file RETURN f" )
+        .then( (queryResult)=>{
+
+            let fileResult = queryResult._result;
+            let fileUpdatePromises = [];
+
+            for( let i=0;i<fileResult.length;i++ ) {
+
+                    nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
+                    .then((repo) => {
+                        return repo.getCommit( fileResult[i].commitId );
+                    })
+                    .then((commitBySHA)=>{
+                        // History returns an event.
+                        let history = commitBySHA.history(nodegit.Revwalk.SORT.Time);
+
+                        // History emits "commit" event for each commit in the branch's history
+                        history.on("commit", (commit) => {
+
+                            commit.getEntry( fileResult[i].name )
+                                .then( (entry)=>{
+
+                                    entry.getBlob().then(function(blob){
+                                        //console.log(String(blob));
+
+                                        fileUpdatePromises.push( arangoDatabaseConnection.query(
+                                            `UPDATE  
+                                                @key
+                                             WITH {
+                                                fileContent: @fileContent }
+                                             IN 
+                                                file`,{ key:fileResult[i]._key, fileContent:String(blob) } ));
+                                    })
+                                })
+                        });
+
+                        // Don't forget to call `start()`!
+                        history.start();
+                    })
+                    .done()
+
+            }
+
+            return Promise.map( fileUpdatePromises, ( values )=>{
+                console.log(values);
+
+                //return Promise.props( values );
+            });
+        })
+        .then( (fileUpdateResult)=>{
+            console.log(fileUpdateResult);
+        })
+    ;
 });
 
 module.exports = router;

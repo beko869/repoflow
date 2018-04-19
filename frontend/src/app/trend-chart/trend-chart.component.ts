@@ -171,12 +171,12 @@ export class TrendChartComponent implements OnInit {
 
         let doc = this.codeMirrorInstance.instance.getDoc();
         doc.setValue( paraCodeMirrorContent );
-        doc.addLineClass( 5, "wrap", "goodLine")
+        /*doc.addLineClass( 5, "wrap", "goodLine")
         doc.addLineClass( 6, "wrap", "notSureLine")
         doc.addLineClass( 7, "wrap", "badLine")
         doc.addLineClass( 10, "wrap", "badLine")
         doc.addLineClass( 11, "wrap", "badLine")
-        doc.addLineClass( 13, "wrap", "goodLine")
+        doc.addLineClass( 13, "wrap", "goodLine")*/
 
     }
 
@@ -370,9 +370,9 @@ export class TrendChartComponent implements OnInit {
             //TODO ende besser machen
             //return this.yScale( d.quality_metric_1*100 )
         })
-        .attr('fill', 'teal')
+        .attr('fill', '#ff7f00')
         .attr('r', (d)=>{ return d.fileCount*2 })
-        .attr('fill', 'teal')
+        .attr('fill', '#ff7f00')
             .on("mouseover", function(d) {
 
                 let qualityValue = 0;
@@ -430,7 +430,7 @@ export class TrendChartComponent implements OnInit {
                 //return this.yScale( d.quality_metric_1*100 )
             })
             .attr("stroke-width", 2)
-            .attr("stroke", "red");
+            .attr("stroke", "#ff7f00");
     }
     /**
      * renders links based on the order of commits
@@ -576,8 +576,9 @@ export class TrendChartComponent implements OnInit {
             .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10)
-            .on("dblclick", (d) => {
-                this.showFileDetailView( d.f.hunks.join() );
+            .on("click", (d) => {
+                console.log(d.f.fileContent );
+                this.showFileDetailView( d.f.fileContent );
             })
             .on("mouseover", function(d){
                 d3Selection.select(this)

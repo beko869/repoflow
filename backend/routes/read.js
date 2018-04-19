@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Promise = require('bluebird');
+const nodegit = require('nodegit');
+const path = require('path');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection');
 
 
@@ -67,6 +69,62 @@ router.get('/file_data/:filename', (req, res, next)=>{
                 }
             ));
         } );
+});
+
+/* GET test file data*/
+router.get('/test_file_history', (req, res, next)=>{
+    /*nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
+      .then(function(repo) {
+            return repo.getCommit('a7850e8c570191a31a3ad5c0ed961c7aed987e27');
+          })
+      .then(function(commitBySHA){
+            // History returns an event.
+                var history = commitBySHA.history(nodegit.Revwalk.SORT.Time);
+
+                // History emits "commit" event for each commit in the branch's history
+                history.on("commit", function(commit) {
+
+                  commit.getEntry('frontend/src/app/app.module.ts')
+                      .then( (entry)=>{
+
+                          console.log("date",commit.date());
+                          console.log("sha",commit.sha());
+
+                          return entry.getBlob().then(function(blob){
+                              console.log(String(blob));
+                          })
+                      } )
+                });
+
+                // Don't forget to call `start()`!
+               history.start();
+          })
+      .done();*/
+
+    nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
+        .then(function(repo) {
+
+            nodegit.Commit.lookup( repo, 'a7850e8c570191a31a3ad5c0ed961c7aed987e27')
+                .then((commit)=>{
+
+                    commit.getEntry('frontend/src/app/app.module.ts')
+                        .then( (entry)=>{
+
+                            console.log("date",commit.date());
+                            console.log("sha",commit.sha());
+
+                            return entry.getBlob().then(function(blob){
+                                console.log(String(blob));
+                            })
+                        } )
+                });
+
+
+            //return repo.getCommit('a7850e8c570191a31a3ad5c0ed961c7aed987e27');
+        })
+
+
+
 });
 
 //TODO deprecated: maybe use this later for commits with file links, but refactor queries
