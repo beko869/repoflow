@@ -8,12 +8,16 @@
         (clearCommitViewEvent)="clearCommitView()"
         (clearFileDetailViewEvent)="clearFileDetailView()"
         (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
+        (fadeFileViewEvent)="fadeFileViewToBackground();fadeCommitViewToForeGround()"
+        (fadeCommitViewEvent)="fadeCommitViewToBackground();fadeFileViewToForeground()"
+        (showFileAndCommitViewsEvent)="addCommitQualityListToVisualization();addFileListToVisualization();"
 >
 </app-options-panel>
 
 <div id="trend-chart">
   <!--trend chart gets rendered here-->
 </div>
+<app-legend></app-legend>
 <codemirror #codeMirrorInstance
             [(ngModel)]="codeMirrorContent"
             [config] = "codeMirrorConfig"

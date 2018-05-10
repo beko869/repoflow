@@ -44,14 +44,14 @@ export class TrendChartComponent implements OnInit {
     private codeMirrorConfig;
 
     @ViewChild('optionsPanel') optionsPanel;
-    @ViewChild('codeMirrorInstance') codeMirrorInstance;4
+    @ViewChild('codeMirrorInstance') codeMirrorInstance;
 
     constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService ) {
 
         this.isFileDetailViewVisible = false;
         this.codeMirrorConfig = {lineNumbers: true, mode: 'javascript'};
 
-        this.margin = {top:20, right:100, bottom:60, left:30};
+        this.margin = {top:20, right:100, bottom:20, left:30};
 
         this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
         this.height = window.innerHeight * 0.6 - this.margin.top - this.margin.bottom;
@@ -87,13 +87,13 @@ export class TrendChartComponent implements OnInit {
 
 
     /**
-     * requests file data and renders the basic commit view
+     * requests file data and renders the basic file view
      */
-    public doFileViewRequestAndRender( paraFilePath: string ) {
+    public doFileViewRequestByFilePathAndRender( paraFilePath: string ) {
         this.fadeCommitViewToBackground();
         this.fadeFileViewToForeground();
 
-        d3Request.json(environment.dataHost + 'read/file_data/'+encodeURIComponent( paraFilePath ), (error, data) => {
+        d3Request.json(environment.dataHost + 'read/file_data_by_name/'+encodeURIComponent( paraFilePath ), (error, data) => {
             this.renderFileView( data );
         });
     }
@@ -158,6 +158,11 @@ export class TrendChartComponent implements OnInit {
         }
     }
 
+    public showCommitAndFileView(): void{
+        this.fadeCommitViewToForeGround();
+        this.fadeFileViewToForeground();
+    }
+
 
     /**
      * resets the trendVisualizationWrapper to visible
@@ -171,13 +176,6 @@ export class TrendChartComponent implements OnInit {
 
         let doc = this.codeMirrorInstance.instance.getDoc();
         doc.setValue( paraCodeMirrorContent );
-        /*doc.addLineClass( 5, "wrap", "goodLine")
-        doc.addLineClass( 6, "wrap", "notSureLine")
-        doc.addLineClass( 7, "wrap", "badLine")
-        doc.addLineClass( 10, "wrap", "badLine")
-        doc.addLineClass( 11, "wrap", "badLine")
-        doc.addLineClass( 13, "wrap", "goodLine")*/
-
     }
 
     /*public getFileDetailViewVisible(): boolean {
@@ -346,7 +344,6 @@ export class TrendChartComponent implements OnInit {
      * renders the commit nodes retrieved from the backend
      */
     public renderCommitViewNodes( paraCommitNodesData: any, paraQualityMetric: any ): void {
-        let that = this;
         let currentXScale = this.getCurrentXScale();
 
         this.trendVisualizationWrapper.append('g').selectAll('rect')
@@ -354,7 +351,7 @@ export class TrendChartComponent implements OnInit {
         .enter()
         .append('circle')
         .attr('class','commit-view-node '+paraQualityMetric)
-        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
+        .attr('cx', (d)=>{ console.log(currentXScale( new Date(d.datetime) ));return currentXScale( new Date(d.datetime) ) })
         .attr('cy', (d)=>{
 
             //TODO besser machen
@@ -373,30 +370,65 @@ export class TrendChartComponent implements OnInit {
         .attr('fill', '#ff7f00')
         .attr('r', (d)=>{ return d.fileCount*2 })
         .attr('fill', '#ff7f00')
-            .on("mouseover", function(d) {
+        .on('click',(d)=>{
+            this.renderFilesOfCommit( d.id );
+        })
+        .on("mouseover", (d)=>{
 
-                let qualityValue = 0;
-                //TODO besser machen
-                if( paraQualityMetric == "m1" ){
-                    qualityValue = d.quality_metric_1;
-                }
-                if( paraQualityMetric == "m2" ){
-                    qualityValue = d.quality_metric_2;
-                }
-                if( paraQualityMetric == "m3" ){
-                    qualityValue = d.quality_metric_3;
-                }
-                //TODO ende besser machen
+            let qualityValue = 0;
+            //TODO besser machen
+            if (paraQualityMetric == "m1") {
+                qualityValue = d.quality_metric_1;
+            }
+            if (paraQualityMetric == "m2") {
+                qualityValue = d.quality_metric_2;
+            }
+            if (paraQualityMetric == "m3") {
+                qualityValue = d.quality_metric_3;
+            }
+            //TODO ende besser machen
 
-                that.fadeInTooltip(
-                    "Quality Value: " + Math.round( qualityValue*100*100 ) / 100 + " %<br/>" +
-                    "Commit Time: " + moment( d.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ) + "<br/>" +
-                    "SHA: " + d.id + "<br/>" +
-                    "Filecount: " + d.fileCount
-                )})
-            .on("mouseout",(d)=>{
-                this.fadeOutTooltip();
+            this.optionsPanelValueService.setInfo({
+                "value": Math.round( qualityValue * 100 * 100 ) / 100 + " %",
+                "sha": d.id,
+                "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
+                "filecount": d.fileCount
             });
+            this.optionsPanel.ref.markForCheck();
+
+            this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue * 100 );
+        })
+        .on("mouseout",(d)=>{
+            this.removeDashedGuideLines();
+        });
+    }
+
+    public renderDashedGuideLineToXAxis( paraX, paraY ){
+        let currentXScale = this.getCurrentXScale();
+
+        this.trendVisualizationWrapper.append("g")
+            .attr("class","guide-line x")
+            .append("line")
+            .attr('y1', this.yScale(paraY) ).attr('y2', this.yScale(paraY) )
+            .attr("x1", 0 ).attr("x2", currentXScale( paraX ) )
+            .attr("stroke-width", 1)
+            .attr("stroke", "gray");
+    }
+
+    public renderDashedGuideLineToYAxis( paraX, paraY ){
+        let currentXScale = this.getCurrentXScale();
+
+        this.trendVisualizationWrapper.append("g")
+            .attr("class","guide-line x")
+            .append("line")
+            .attr('y1', this.yScale(paraY) ).attr('y2', this.height )
+            .attr("x1", currentXScale( paraX ) ).attr("x2", currentXScale( paraX ) )
+            .attr("stroke-width", 1)
+            .attr("stroke", "gray");
+    }
+
+    public removeDashedGuideLines(){
+        d3Selection.selectAll('.guide-line').remove();
     }
 
     /**
@@ -432,6 +464,23 @@ export class TrendChartComponent implements OnInit {
             .attr("stroke-width", 2)
             .attr("stroke", "#ff7f00");
     }
+
+    /**
+     * requests file data and renders the basic commit view
+     */
+    public renderFilesOfCommit( paraSha: string ) {
+        d3Request.json(environment.dataHost + 'read/file_data_by_sha/'+encodeURIComponent( paraSha ), (error, data) => {
+            for( let i=0;i<data.files.length; i++ )
+            {
+                if( !this.optionsPanelValueService.getSelectedFileList().includes( data.files[i].f.name ) ){
+                    this.optionsPanelValueService.setFileSelectValue( data.files[i].f.name );
+                }
+            }
+            this.optionsPanel.ref.markForCheck();
+            this.addFileListToVisualization();
+        });
+    }
+
     /**
      * renders links based on the order of commits
      * @param paraCommitNodesData commit data as array from the backend
@@ -563,7 +612,6 @@ export class TrendChartComponent implements OnInit {
      * renders the commit nodes retrieved from the backend
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
-        let that = this; //for use in mouseover callback
         let currentXScale = this.getCurrentXScale();
 
         //add main dot to fileview nodes
@@ -577,29 +625,23 @@ export class TrendChartComponent implements OnInit {
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10)
             .on("click", (d) => {
-                console.log(d.f.fileContent );
                 this.showFileDetailView( d.f.fileContent );
             })
-            .on("mouseover", function(d){
-                d3Selection.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr('r',16);
+            .on("mouseover", (d) => {
+                this.optionsPanelValueService.setInfo( {
+                    "filename":d.f.name,
+                    "value": Math.round( d.f.quality_metric_1 * 100 * 100 ) / 100 + " %",
+                    "sha":d.f.commitId,
+                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                } );
+                this.optionsPanel.ref.markForCheck();
 
-                that.fadeInTooltip(
-                    "Quality Value: " + Math.round( d.f.quality_metric_1*100*100 ) / 100 + " %<br/>" +
-                                     "Commit Time: " + moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), d.f.quality_metric_1*100 );
+                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), d.f.quality_metric_1*100 );
 
-
-                );
             })
-            .on("mouseout", function(){
-                d3Selection.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr('r',10);
-
-                that.fadeOutTooltip();
+            .on("mouseout", ()=>{
+                this.removeDashedGuideLines();
             });
     }
 
@@ -669,7 +711,7 @@ export class TrendChartComponent implements OnInit {
      */
     public fadeCommitViewToForeGround(): void {
         d3Selection.selectAll('.commit-view-node').transition().duration(700).style("opacity", 1);
-        d3Selection.selectAll('.commit-view-link').transition().duration(700).style("opacity", 1);
+        d3Selection.selectAll('.commit-view-balloon-line').transition().duration(700).style("opacity", 1);
     }
 
 
@@ -713,7 +755,7 @@ export class TrendChartComponent implements OnInit {
             return;
         }
         else {
-            this.doFileViewRequestAndRender( filepath );
+            this.doFileViewRequestByFilePathAndRender( filepath );
         }
 
         return;
@@ -724,6 +766,7 @@ export class TrendChartComponent implements OnInit {
      * @param {string} paraFilepath specifies the file data to be displayed
      */
     public addFileListToVisualization(): void {
+        this.clearFileView();
 
         let files = this.optionsPanelValueService.getSelectedFileList();
 
@@ -733,7 +776,7 @@ export class TrendChartComponent implements OnInit {
                 return;
             }
             else {
-                this.doFileViewRequestAndRender( filepath );
+                this.doFileViewRequestByFilePathAndRender( filepath );
             }
         }
 
@@ -741,6 +784,7 @@ export class TrendChartComponent implements OnInit {
     }
 
     public addCommitQualityListToVisualization(): void {
+        this.clearCommitView();
 
         let qualities = this.optionsPanelValueService.getSelectedCommitQualityList();
 

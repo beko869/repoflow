@@ -25,6 +25,9 @@ export class OptionsPanelComponent {
     @Output() showFileDetailViewEvent = new EventEmitter<string>();
     @Output() addSelectedFileListToVisualizationEvent = new EventEmitter<string>();
     @Output() addSelectedCommitQualityListToVisualizationEvent = new EventEmitter<string>();
+    @Output() fadeFileViewEvent = new EventEmitter<string>();
+    @Output() fadeCommitViewEvent = new EventEmitter<string>();
+    @Output() showFileAndCommitViewsEvent = new EventEmitter<string>();
     private selectOptions: any;
 
     constructor( private optionsPanelValueService:OptionsPanelValueService, private ref:ChangeDetectorRef ) {
@@ -49,6 +52,14 @@ export class OptionsPanelComponent {
     public setFileColorList( paraValuesArray ): void {
         this.optionsPanelValueService.setFileColorList( paraValuesArray );
         this.ref.markForCheck();
+    }
+
+    public getIsFileInfo(){
+        return this.optionsPanelValueService.getIsFileInfo();
+    }
+
+    public getInfo(){
+        return this.optionsPanelValueService.getInfo();
     }
 
 
@@ -76,11 +87,11 @@ export class OptionsPanelComponent {
      */
     public getCommitQualityListForSelect(): any {
         //TODO real data
-        return [{"id":"m1","text":"m1"},{"id":"m2","text":"m2"},{"id":"m3","text":"m3"}];
+        return [{"id":'0',"text":"--- choose commit quality ---"},{"id":"m1","text":"m1"},{"id":"m2","text":"m2"},{"id":"m3","text":"m3"}];
     }
 
     /**
-     * uses the optionsPanelValueService to return the list of a selected files
+     * uses the optionsPanelValueService to return the list of selected files
      * @returns {string[]}
      */
     public getSelectedFileList(): string[] {
@@ -113,15 +124,20 @@ export class OptionsPanelComponent {
      * @param {string} paraValue
      */
     public setFileSelectValueAndEmitAddFileToVisualizationEvent( paraOption: any ): void {
-        this.optionsPanelValueService.setFileSelectValue( paraOption );
-        this.addFileToVisualizationEvent.emit();
-        this.ref.markForCheck();
+        //TODO: make better check if option is placeholder, check for 0 value or similar
+        if( paraOption != "--- choose file ---" ) {
+            this.optionsPanelValueService.setFileSelectValue(paraOption);
+            this.addFileToVisualizationEvent.emit();
+            this.ref.markForCheck();
+        }
     }
 
-    public setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( paraValue:string ): void {
-        this.optionsPanelValueService.setCommitQualitySelectValue( paraValue );
-        this.addCommitQualityToVisualizationEvent.emit();
-        this.ref.markForCheck();
+    public setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( paraValue: string ): void {
+        if( paraValue != '0' ) {
+            this.optionsPanelValueService.setCommitQualitySelectValue( paraValue );
+            this.addCommitQualityToVisualizationEvent.emit();
+            this.ref.markForCheck();
+        }
     }
 
     public getSelectLayoutOptions(){
@@ -140,13 +156,27 @@ export class OptionsPanelComponent {
         this.clearCommmitView();
         this.addSelectedFileListToVisualizationEvent.emit();
         this.ref.markForCheck();
-
     }
 
     public showFileDetailView(): void {
         this.clearCommmitView();
         this.clearFileView();
         this.showFileDetailViewEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public showFileAndCommmitViews(): void {
+        this.showFileAndCommitViewsEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public fadeFileView(): void {
+        this.fadeFileViewEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public fadeCommitView(): void {
+        this.fadeCommitViewEvent.emit();
         this.ref.markForCheck();
     }
 

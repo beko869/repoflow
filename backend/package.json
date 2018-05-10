@@ -11,11 +11,16 @@
     "body-parser": "~1.17.1",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
+    "es6-plato": "^1.0.17",
     "express": "~4.15.2",
     "jade": "~1.11.0",
+    "jshint": "^2.9.5",
     "morgan": "~1.8.1",
     "nodegit": "^0.20.3",
     "nodegit-kit": "^0.17.0",
-    "serve-favicon": "~2.4.2"
+    "serve-favicon": "~2.4.2",
+    "tslint": "^5.9.1",
+    "typescript": "^2.8.3",
+    "typescript-simple": "^8.0.6"
   }
 }

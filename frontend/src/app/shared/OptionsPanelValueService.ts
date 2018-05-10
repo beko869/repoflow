@@ -15,7 +15,26 @@ export class OptionsPanelValueService {
     private selectedFileList: string[] = [];
     private selectedCommitQualityList: string[] = [];
     private commitQualitySelectValue: string;
+    private isFileInfo: boolean;
+    private info: any;
 
+
+    public setIsFileInfo( paraValue: boolean ){
+        this.isFileInfo = paraValue;
+    }
+
+    public getIsFileInfo(){
+        return this.isFileInfo;
+    }
+
+    public setInfo( paraValue: any ){
+        this.info = paraValue;
+    }
+
+    public getInfo(){
+        return this.info;
+        //return {"value":"0.1","filename":"bla","time":"1h 12"}
+    }
 
     /**
      * sets the selected file value from the options panel component file dropdown
@@ -64,6 +83,7 @@ export class OptionsPanelValueService {
      */
     public setFileList( paraFileList: string[] ) {
         this.fileList = paraFileList;
+        this.fileList.unshift( "--- choose file ---" );
     }
 
 
@@ -119,7 +139,7 @@ export class OptionsPanelValueService {
     public removeFromSelectedFileList( paraValueToBeRemoved ): void {
         this.fileRemoveValue = paraValueToBeRemoved;
 
-        for (var i=this.selectedFileList.length-1; i>=0; i--) {
+        for (let i=this.selectedFileList.length-1; i>=0; i--) {
             if (this.selectedFileList[i] === paraValueToBeRemoved) {
                 this.selectedFileList.splice(i, 1);
             }

@@ -11,12 +11,14 @@ import { OptionsPanelComponent } from './options-panel/options-panel.component';
 import { TrendChartComponent } from './trend-chart/trend-chart.component';
 import { OptionsPanelValueService } from "./shared/OptionsPanelValueService";
 import { UtilityService } from "./shared/UtilityService";
+import { LegendComponent } from './legend/legend.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     OptionsPanelComponent,
-    TrendChartComponent
+    TrendChartComponent,
+    LegendComponent
   ],
   imports: [
     BrowserModule,

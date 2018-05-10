@@ -1,0 +1,15 @@
+.legend-holder {
+    float:right;
+    padding-right:100px;
+}
+
+.legend-label {
+
+    font-size: 12px;
+    height:20px;
+
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}

@@ -3,6 +3,7 @@ const router = express.Router();
 const Promise = require('bluebird');
 const nodegit = require('nodegit');
 const path = require('path');
+const jshint = require('jshint');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection');
 
 
@@ -57,7 +58,7 @@ router.get('/commit_data',  (req, res, next)=>{
 });
 
 /* GET file data by name*/
-router.get('/file_data/:filename', (req, res, next)=>{
+router.get('/file_data_by_name/:filename', (req, res, next)=>{
     arangoDatabaseConnection.query("FOR c IN commit FOR f IN file FILTER f.name=='"+req.params.filename+"' AND f.commitId == c.id RETURN {f,c}") //TODO join auf die color tabelle?
         .then( (values)=>{
 
@@ -71,59 +72,43 @@ router.get('/file_data/:filename', (req, res, next)=>{
         } );
 });
 
+/* GET file data by name*/
+router.get('/file_data_by_sha/:sha', (req, res, next)=>{
+    arangoDatabaseConnection.query("FOR c IN commit FOR f IN file FILTER f.commitId=='"+req.params.sha+"' AND f.commitId == c.id RETURN {f,c}") //TODO join auf die color tabelle?
+        .then( (values)=>{
+
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify(
+                {
+                    "files":values._result
+                }
+            ));
+        } );
+});
+
 /* GET test file data*/
-router.get('/test_file_history', (req, res, next)=>{
-    /*nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
-      .then(function(repo) {
-            return repo.getCommit('a7850e8c570191a31a3ad5c0ed961c7aed987e27');
-          })
-      .then(function(commitBySHA){
-            // History returns an event.
-                var history = commitBySHA.history(nodegit.Revwalk.SORT.Time);
-
-                // History emits "commit" event for each commit in the branch's history
-                history.on("commit", function(commit) {
-
-                  commit.getEntry('frontend/src/app/app.module.ts')
-                      .then( (entry)=>{
-
-                          console.log("date",commit.date());
-                          console.log("sha",commit.sha());
-
-                          return entry.getBlob().then(function(blob){
-                              console.log(String(blob));
-                          })
-                      } )
-                });
-
-                // Don't forget to call `start()`!
-               history.start();
-          })
-      .done();*/
-
-    nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
-        .then(function(repo) {
-
-            nodegit.Commit.lookup( repo, 'a7850e8c570191a31a3ad5c0ed961c7aed987e27')
-                .then((commit)=>{
-
-                    commit.getEntry('frontend/src/app/app.module.ts')
-                        .then( (entry)=>{
-
-                            console.log("date",commit.date());
-                            console.log("sha",commit.sha());
-
-                            return entry.getBlob().then(function(blob){
-                                console.log(String(blob));
-                            })
-                        } )
-                });
+router.get('/test_plato', (req, res, next)=>{
 
 
-            //return repo.getCommit('a7850e8c570191a31a3ad5c0ed961c7aed987e27');
-        })
 
 
+    //JSHINT(["var a = 3;"], {undef: true}, {foo:false});
+   //console.log(jshint.data());
+
+    jshint.JSHINT(["var a = 3;","function(){let b = a; return b;}"], {undef: true}, {foo:false});
+
+    let qualityData = jshint.JSHINT.data();
+
+    console.log(qualityData.functions[0]);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(JSON.stringify(
+        {
+            "value":"bla"
+        }
+    ));
 
 });
 

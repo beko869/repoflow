@@ -3,6 +3,9 @@ const path = require('path');
 const nodegitKit = require('nodegit-kit');
 const nodegit = require('nodegit');
 const Promise = require('bluebird');
+const jshint = require('jshint');
+const tslint = require("tslint");
+const tss = require("typescript-simple");
 const arangoDatabaseConnection = require('../arangoDatabaseConnection')
 const colorScheme = require('../colorScheme');
 const router = express.Router();
@@ -183,16 +186,58 @@ router.put('/database', (req, res, next)=>{
                                                     .then((entry) => {
                                                         entry.getBlob().then((blob) => {
                                                             //if( entry.sha() == fileResult[i].commitId ) {
+                                                            let fileType = fileResult[i].name.slice(-3);
+                                                            let fileContent = String(blob);
+
+                                                            if( fileType == '.js' )
+                                                            {
+                                                                //javascript code quality check
+                                                                jshint.JSHINT("function(a){ if(a=1){ if(b=2){ a+b=3; } } }", {undef: true,esversion:6}, {foo:false});
+                                                                let qualityData = jshint.JSHINT.data();
+
+                                                                console.log("//-----------------------//");
+                                                                console.log(qualityData.functions[0]);
+                                                                console.log(fileResult[i].name);
+                                                                console.log("//-----------------//");
+                                                            }
+
+                                                            /*if( fileType == '.ts' )
+                                                            {
+                                                                try {
+                                                                    //console.log("its ts");
+                                                                    let options = {
+                                                                        fix: false,
+                                                                        formatter: "json"
+                                                                    };
+
+                                                                    const rawConfig = tslint.Configuration.DEFAULT_CONFIG;
+
+                                                                    rawConfig.rules = {
+                                                                        semicolon: [true, 'always'],
+                                                                    };
+
+                                                                    console.log(rawConfig);
+
+                                                                    let linter = new tslint.Linter(options);
+                                                                    linter.lint(fileResult[i].name, String(blob), rawConfig );
+                                                                    let result = linter.getResult();
+
+                                                                    //console.log(result);
+                                                                }catch(e){console.log(e);process.exit(1);}
+                                                            }*/
+
 
                                                             fileUpdatePromises.push(arangoDatabaseConnection.query(
                                                                 `UPDATE  
                                                                 @key
                                                              WITH {
-                                                                fileContent: @fileContent }
+                                                                fileContent: @fileContent,
+                                                                complexity: @complexity}
                                                              IN 
                                                                 file`, {
                                                                     key: fileResult[i]._key,
-                                                                    fileContent: String(blob)
+                                                                    fileContent: String(blob),
+                                                                    complexity: ''
                                                                 }));
                                                             //}
                                                         });

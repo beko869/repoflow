@@ -44,3 +44,13 @@
 
     border-color: #0e83cd !important;
 }
+
+.info-label{
+    margin-top:10px;
+    font-size:10px;
+}
+
+.info-value{
+    font-size:12px;
+    font-style:normal;
+}

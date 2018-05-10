@@ -1,9 +1,9 @@
-#trend-chart{
+#trend-chart {
     float:right;
     width:80%;
 }
 
-app-options-panel{
+app-options-panel {
     width:18%;
     float:left;
 
@@ -14,7 +14,12 @@ app-options-panel{
     border-right:dashed 1px black;
 }
 
-codemirror{
+app-legend {
+    float:right;
+    width:80%;
+}
+
+codemirror {
     float:right;
     width:80%;
 }
@@ -55,4 +60,8 @@ codemirror{
 
 .commit-view-node {
     cursor:pointer;
+}
+
+.guide-line{
+    stroke-dasharray: 3,3;
 }
