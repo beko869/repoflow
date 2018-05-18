@@ -1,28 +1,27 @@
-<app-options-panel #optionsPanel
-        (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
-        (addFileToVisualizationEvent)="addFileToVisualization()"
-        (addCommitQualityToVisualizationEvent)="addCommitQualityToVisualization()"
-        (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
-        (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
-        (clearFileViewEvent)="clearFileView()"
-        (clearCommitViewEvent)="clearCommitView()"
-        (clearFileDetailViewEvent)="clearFileDetailView()"
-        (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
-        (fadeFileViewEvent)="fadeFileViewToBackground();fadeCommitViewToForeGround()"
-        (fadeCommitViewEvent)="fadeCommitViewToBackground();fadeFileViewToForeground()"
-        (showFileAndCommitViewsEvent)="addCommitQualityListToVisualization();addFileListToVisualization();"
->
-</app-options-panel>
-
-<div id="trend-chart">
-  <!--trend chart gets rendered here-->
+<div class="horizontal-flex-wrapper">
+  <app-options-panel #optionsPanel
+          (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
+          (addFileToVisualizationEvent)="addFileToVisualization()"
+          (addCommitQualityToVisualizationEvent)="addCommitQualityToVisualization()"
+          (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
+          (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
+          (clearFileViewEvent)="clearFileView()"
+          (clearCommitViewEvent)="clearCommitView()"
+          (clearFileDetailViewEvent)="clearFileDetailView()"
+          (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
+          (fadeFileViewEvent)="fadeFileViewToBackground();fadeCommitViewToForeGround()"
+          (fadeCommitViewEvent)="fadeCommitViewToBackground();fadeFileViewToForeground()"
+          (showFileAndCommitViewsEvent)="addCommitQualityListToVisualization();addFileListToVisualization();"
+  >
+  </app-options-panel>
+  <div class="vertical-flex-wrapper">
+    <app-diff-panel #diffPanel></app-diff-panel>
+    <div id="trend-chart">
+      <!--trend chart gets rendered here-->
+    </div>
+    <app-legend></app-legend>
+  </div>
 </div>
-<app-legend></app-legend>
-<codemirror #codeMirrorInstance
-            [(ngModel)]="codeMirrorContent"
-            [config] = "codeMirrorConfig"
->
-</codemirror>
 
 
 

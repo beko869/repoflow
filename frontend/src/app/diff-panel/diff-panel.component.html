@@ -1,0 +1,40 @@
+<div class="diff-panel-holder">
+
+    <div class="file-info-holder">
+        <label class="info-label">Filename</label>
+        <div class="info-value">{{getLeftFileData().fileName}}</div>
+        <label class="info-label">SHA</label>
+        <div class="info-value">{{getLeftFileData().sha}}</div>
+        <div class="button" (click)="toggleLeftFileFixated()">
+            <span *ngIf="getLeftFileFixated() && getLeftFileData().fileName != 'N/A'; else leftFileFixated" >
+                Change file revision
+            </span>
+            <ng-template #leftFileFixated>
+                Fixate file revision
+            </ng-template>
+        </div>
+    </div>
+
+    <div class="file-info-holder">
+        <label class="info-label">Filename</label>
+        <div class="info-value">{{getRightFileData().fileName}}</div>
+        <label class="info-label">SHA</label>
+        <div class="info-value">{{getRightFileData().sha}}</div>
+        <div class="button" (click)="modal.show();codeEditor.setLeftContent();codeEditor.setRightContent()">
+            Show File Difference View
+        </div>
+    </div>
+
+    <app-modal-dialog #modal>
+        <div class="app-modal-header">
+            Difference View
+        </div>
+        <div class="app-modal-body">
+           <app-code-editor #codeEditor></app-code-editor>
+        </div>
+        <div class="app-modal-footer">
+            <button type="button" class="btn btn-default" (click)="modal.hide()">Close</button>
+        </div>
+    </app-modal-dialog>
+
+</div>

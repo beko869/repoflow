@@ -1,0 +1,21 @@
+.diff-panel-holder{
+    display:flex;
+
+    justify-content:flex-start;
+    align-items:flex-end;
+    padding-left:20px;
+}
+
+.file-info-holder{
+    flex-basis:300px;
+}
+
+.info-label{
+    margin-top:10px;
+    font-size:10px;
+}
+
+.info-value{
+    font-size:12px;
+    font-style:normal;
+}

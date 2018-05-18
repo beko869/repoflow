@@ -13,8 +13,7 @@ import * as moment from 'moment';
 import {environment} from "../../environments/environment";
 import {UtilityService} from '../shared/UtilityService';
 import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror';
+import {DiffPanelValueService} from "../shared/DiffPanelValueService";
 
 
 @Component({
@@ -41,29 +40,28 @@ export class TrendChartComponent implements OnInit {
     private tooltip: any;
     private fileColorLookupArray: any;
     private isFileDetailViewVisible: boolean;
-    private codeMirrorConfig;
 
     @ViewChild('optionsPanel') optionsPanel;
-    @ViewChild('codeMirrorInstance') codeMirrorInstance;
+    @ViewChild('codeEditor') codeEditor;
+    @ViewChild('diffPanel') diffPanel;
 
-    constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService ) {
 
+    constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService, private diffPanelValueService: DiffPanelValueService ) {
         this.isFileDetailViewVisible = false;
-        this.codeMirrorConfig = {lineNumbers: true, mode: 'javascript'};
-
-        this.margin = {top:20, right:100, bottom:20, left:30};
-
-        this.width = window.innerWidth * 0.8 - this.margin.left - this.margin.right;
-        this.height = window.innerHeight * 0.6 - this.margin.top - this.margin.bottom;
-
+        this.margin = {top:0, right:0, bottom:20, left:0};
         this.xScaleZoomed = null;
     }
 
     ngOnInit() {
+
+        this.width = window.document.getElementById( 'trend-chart' ).getBoundingClientRect().width - this.margin.left - this.margin.right;
+        this.height = window.innerHeight*0.75 - this.margin.top - this.margin.bottom;
+
+
         d3Request.json(environment.dataHost + 'read/initial_data', (error, data) => {
             this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
 
-            this.initTooltip();
+            //this.initTooltip();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
             this.initSvg();
@@ -158,12 +156,6 @@ export class TrendChartComponent implements OnInit {
         }
     }
 
-    public showCommitAndFileView(): void{
-        this.fadeCommitViewToForeGround();
-        this.fadeFileViewToForeground();
-    }
-
-
     /**
      * resets the trendVisualizationWrapper to visible
      */
@@ -173,9 +165,8 @@ export class TrendChartComponent implements OnInit {
     }
 
     public showFileDetailView( paraCodeMirrorContent = "" ): void {
-
-        let doc = this.codeMirrorInstance.instance.getDoc();
-        doc.setValue( paraCodeMirrorContent );
+        //this.codeEditor.setLeftContent( paraCodeMirrorContent );
+        //this.codeEditor.setRightContent( paraCodeMirrorContent );
     }
 
     /*public getFileDetailViewVisible(): boolean {
@@ -262,33 +253,6 @@ export class TrendChartComponent implements OnInit {
         this.optionsPanel.setFileList( paraFileNamesArray );
         this.optionsPanel.setFileColorList( paraFileColorsArray );
     }
-
-
-    /**
-     * fades the tooltip html in at the left corner of the visualization
-     * @param paraTooltipContent the content to be displayed in the tooltip
-     */
-    public fadeInTooltip( paraTooltipContent: any ): void {
-
-        this.tooltip
-            .transition()
-            .duration(200)
-            .style("opacity",0.9);
-
-        this.tooltip
-            .html( paraTooltipContent )
-            .style("left", "0px")
-            .style("top", "400px");
-    }
-
-
-    /**
-     * fades out the tooltip html
-     */
-    public fadeOutTooltip(): void {
-        this.tooltip.transition().duration(500).style("opacity",0);
-    }
-
 
     /**
      * renders the axis with the initialized values to the svg
@@ -398,11 +362,16 @@ export class TrendChartComponent implements OnInit {
 
             this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue * 100 );
         })
-        .on("mouseout",(d)=>{
+        .on("mouseout",()=>{
             this.removeDashedGuideLines();
         });
     }
 
+    /**
+     * renders guidelines to the corresponding x axis to easily identify an exact value
+     * @param paraX x coordinates non scaled but in right domain
+     * @param paraY y coordinates non scaled but in right domain
+     */
     public renderDashedGuideLineToXAxis( paraX, paraY ){
         let currentXScale = this.getCurrentXScale();
 
@@ -415,6 +384,11 @@ export class TrendChartComponent implements OnInit {
             .attr("stroke", "gray");
     }
 
+    /**
+     * renders guidelines to the corresponding y axis to easily identify an exact value
+     * @param paraX x coordinates non scaled but in right domain
+     * @param paraY y coordinates non scaled but in right domain
+     */
     public renderDashedGuideLineToYAxis( paraX, paraY ){
         let currentXScale = this.getCurrentXScale();
 
@@ -482,133 +456,6 @@ export class TrendChartComponent implements OnInit {
     }
 
     /**
-     * renders links based on the order of commits
-     * @param paraCommitNodesData commit data as array from the backend
-     * @param paraFileLinksData file path data as array from the backend
-     */
-    public renderCommitViewLinks( paraCommitNodesData: any, paraCommitQuality: string ): void {
-        //d3 line generator
-        const line = d3Shape.line()
-            .x((d)=>{ return d[ 'x' ] })
-            .y((d)=>{ return d[ 'y' ] })
-            .curve(d3Shape.curveMonotoneX);
-
-
-        let commitLinkArray = [];
-        let dateCompare = this.utility.commitDatetimeComparer;
-        let commitNodesSortedByDatetime = paraCommitNodesData.sort( dateCompare );
-
-
-
-        commitNodesSortedByDatetime.forEach( (commitNode,i)=>{
-
-            //TODO besser machen
-            let metric = 0;
-
-            if( paraCommitQuality == "m1" ){
-                metric = commitNode.quality_metric_1*100;
-            }
-            if( paraCommitQuality == "m2" ){
-                metric = commitNode.quality_metric_2*100;
-            }
-            if( paraCommitQuality == "m3" ){
-                metric = commitNode.quality_metric_3*100;
-            }
-            //TODO ende besser machen
-
-            commitLinkArray.push({
-                "x": this.xScale( new Date(commitNode.datetime) ),
-                "y": this.yScale( metric )
-            });
-        });
-
-        this.trendVisualizationWrapper
-            .append('path')
-            .datum(commitLinkArray)
-            .attr('class','commit-view-link '+paraCommitQuality)
-            .attr("fill", "none")
-            .attr("stroke", 'red')
-            .attr("stroke-linejoin", "round")
-            .attr("stroke-linecap", "round")
-            .attr("stroke-width", 3)
-            .attr("d", line);
-
-    }
-
-
-    /**
-     * renders links based on the files paths through commits
-     * @param paraCommitNodesData commit data as array from the backend
-     * @param paraFileLinksData file path data as array from the backend
-     */
-    public renderCommitViewFileLinks( paraCommitNodesData: any, paraFileLinksData: any ): void {
-        //TODO currently deprecated as it makes little sense in commits with a huge file count to display them all as a link
-        //d3 line generator
-        const line = d3Shape.line()
-            .x((d)=>{ return d[ 'x' ] })
-            .y((d)=>{ return d[ 'y' ] });
-
-        let controlFileLinkRenderHeightArray = [];
-
-        console.log("fileLinksData",paraFileLinksData);
-
-        //iterating through every set of filepaths
-        paraFileLinksData.forEach( (filePath,i)=>{
-            for( let i=0; i<filePath.links.length-1; i++ ){
-
-                let fileLinkArray = [];
-                controlFileLinkRenderHeightArray.push(filePath.links[i].commitId);
-
-                let lookup = this.utility.createIDLookupForArray( paraCommitNodesData );
-
-
-                fileLinkArray.push(
-                    {
-                        "x": this.xScale( new Date(lookup[filePath.links[i].commitId].datetime) ),
-                        "y": this.yScale( lookup[filePath.links[i].commitId].quality * 100 - this.utility.getCounterForValueInArray( filePath.links[i].commitId, controlFileLinkRenderHeightArray ) ),
-                        "commitId": filePath.links[i].commitId,
-                        "fileName": filePath.links[i].name
-                    }
-                );
-
-                fileLinkArray.push(
-                    {
-                        "x": this.xScale( new Date(lookup[filePath.links[i+1].commitId].datetime) ),
-                        "y": this.yScale( lookup[filePath.links[i+1].commitId].quality * 100 - this.utility.getCounterForValueInArray( filePath.links[i+1].commitId, controlFileLinkRenderHeightArray ) ),
-                        "commitId": filePath.links[i+1].commitId,
-                        "fileName": filePath.links[i+1].name
-                    }
-                );
-
-                console.log("fileLinksArray",fileLinkArray);
-
-                this.trendVisualizationWrapper
-                    .append('path')
-                    .datum(fileLinkArray)
-                    .attr('class','commit-view-link')
-                    .attr("fill", "none")
-                    .attr("stroke", filePath.color)
-                    .attr("stroke-linejoin", "round")
-                    .attr("stroke-linecap", "round")
-                    .attr("stroke-width", 3)
-                    .attr("d", line)
-                    .on("mouseover", (d) => {
-
-                        console.log(d[0].fileName + " goes from " + d[0].commitId.substring(0,7) + " to " + d[1].commitId.substring(0,7));
-                        this.fadeInTooltip( d[0].fileName + " goes from " + d[0].commitId.substring(0,7) + " to " + d[1].commitId.substring(0,7));
-                    })
-                    .on("mouseout",(d)=>{
-                        this.fadeOutTooltip();
-                    });
-
-                fileLinkArray = [];
-
-            }
-        } );
-    }
-
-
-    /**
      * renders the commit nodes retrieved from the backend
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
@@ -625,7 +472,16 @@ export class TrendChartComponent implements OnInit {
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10)
             .on("click", (d) => {
-                this.showFileDetailView( d.f.fileContent );
+                if( this.diffPanel.getLeftFileFixated() ) {
+                    this.diffPanelValueService.setRightContent( d.f.fileContent )
+                    this.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
+                }
+                else {
+                    this.diffPanelValueService.setLeftContent( d.f.fileContent )
+                    this.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
+                }
+
+                //this.showFileDetailView( d.f.fileContent );
             })
             .on("mouseover", (d) => {
                 this.optionsPanelValueService.setInfo( {
@@ -648,7 +504,6 @@ export class TrendChartComponent implements OnInit {
 
     /**
      * renders links based on the files paths through commits
-     * @param paraCommitNodesData commit data as array from the backend
      * @param paraFileLinksData file path data as array from the backend
      */
     public renderFileViewFileLinks( paraFileLinksData: any ): void {
@@ -664,7 +519,7 @@ export class TrendChartComponent implements OnInit {
         let dateCompare = this.utility.fileDatetimeComparer;
         let filesSortyByCommitDatetime = paraFileLinksData.sort( dateCompare );
 
-        filesSortyByCommitDatetime.forEach( (file,i)=>{
+        filesSortyByCommitDatetime.forEach( (file)=>{
             fileLinkArray.push({
                 "x": new Date(file.c.datetime),
                 "y": file.f.quality_metric_1*100,
@@ -726,7 +581,6 @@ export class TrendChartComponent implements OnInit {
 
     /**
      * switches between commit and file view
-     * @param {number} paraView specifies the view is currently used
      */
     public addCommitQualityToVisualization(): void {
 
@@ -745,7 +599,6 @@ export class TrendChartComponent implements OnInit {
 
     /**
      * adds the file to the visualization
-     * @param {string} paraFilepath specifies the file data to be displayed
      */
     public addFileToVisualization(): void {
 
@@ -763,7 +616,6 @@ export class TrendChartComponent implements OnInit {
 
     /**
      * adds the file to the visualization
-     * @param {string} paraFilepath specifies the file data to be displayed
      */
     public addFileListToVisualization(): void {
         this.clearFileView();
@@ -802,8 +654,7 @@ export class TrendChartComponent implements OnInit {
     }
 
     /**
-     * removes the file from the visualization
-     * @param {string} paraFilepath specifies the file data to be removed
+     * deleting file in options panel removes file from the visualization
      */
     public removeFileFromVisualization(): void {
         let filepath = this.optionsPanelValueService.getFileRemovedValue();
@@ -818,8 +669,4 @@ export class TrendChartComponent implements OnInit {
 
         return;
     }
-
-
-
-
 }

@@ -12,13 +12,20 @@ import { TrendChartComponent } from './trend-chart/trend-chart.component';
 import { OptionsPanelValueService } from "./shared/OptionsPanelValueService";
 import { UtilityService } from "./shared/UtilityService";
 import { LegendComponent } from './legend/legend.component';
+import { CodeEditorComponent } from './code-editor/code-editor.component';
+import { DiffPanelComponent } from './diff-panel/diff-panel.component';
+import { DiffPanelValueService } from "./shared/DiffPanelValueService";
+import { ModalDialogComponent } from './modal-dialog/modal-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     OptionsPanelComponent,
     TrendChartComponent,
-    LegendComponent
+    LegendComponent,
+    CodeEditorComponent,
+    DiffPanelComponent,
+    ModalDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -33,7 +40,7 @@ import { LegendComponent } from './legend/legend.component';
         }
     ])
   ],
-  providers: [OptionsPanelValueService,UtilityService],
+  providers: [OptionsPanelValueService,UtilityService,DiffPanelValueService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

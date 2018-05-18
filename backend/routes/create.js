@@ -252,60 +252,22 @@ router.put('/database', (req, res, next)=>{
         });
 });
 
+router.put('/add/quality/:files_with_sha_and_computed_metric', (req,res,next)=>{
+    //TODO Plan für diesen call
+    //1. parameter kommt als array hier an (JSON decode)
+    //2. array wird gelooped
+    //2.1. in der loop wird für jedes file/sha pair in der db geschaut ob es existiert und der mitgegebene wert abgespeichert
+
+    //TODO Sinn: Parameter können auch woanders berechnet werden als in NodeJS: PHP, Java, whatever...solange die Parameter in dieser Form ankommen
+    //TODO damit die Parameter so ankommen können die caller /read/files_with_sha aufrufen, da kommen dann alle files mit sha als array mit
+    //TODO der Plan wäre also: create/database -> dann sind mal alle file/sha pairs existent (also alle fileversionen im repo liegen dann in der db)
+    //TODO dann kann man von irgendwo aus /read/files_with_sha aufrufen
+    //TODO qualität berechnen
+    //TODO und wieder zurückschicken
+});
+
 router.put('/test', (req, res, next)=>{
-    arangoDatabaseConnection.query( "FOR f IN file RETURN f" )
-        .then( (queryResult)=>{
 
-            let fileResult = queryResult._result;
-            let fileUpdatePromises = [];
-
-            for( let i=0;i<fileResult.length;i++ ) {
-
-                    nodegit.Repository.open(path.resolve(__dirname, "../../.git"))
-                    .then((repo) => {
-                        return repo.getCommit( fileResult[i].commitId );
-                    })
-                    .then((commitBySHA)=>{
-                        // History returns an event.
-                        let history = commitBySHA.history(nodegit.Revwalk.SORT.Time);
-
-                        // History emits "commit" event for each commit in the branch's history
-                        history.on("commit", (commit) => {
-
-                            commit.getEntry( fileResult[i].name )
-                                .then( (entry)=>{
-
-                                    entry.getBlob().then(function(blob){
-                                        //console.log(String(blob));
-
-                                        fileUpdatePromises.push( arangoDatabaseConnection.query(
-                                            `UPDATE  
-                                                @key
-                                             WITH {
-                                                fileContent: @fileContent }
-                                             IN 
-                                                file`,{ key:fileResult[i]._key, fileContent:String(blob) } ));
-                                    })
-                                })
-                        });
-
-                        // Don't forget to call `start()`!
-                        history.start();
-                    })
-                    .done()
-
-            }
-
-            return Promise.map( fileUpdatePromises, ( values )=>{
-                console.log(values);
-
-                //return Promise.props( values );
-            });
-        })
-        .then( (fileUpdateResult)=>{
-            console.log(fileUpdateResult);
-        })
-    ;
 });
 
 module.exports = router;

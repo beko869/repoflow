@@ -87,6 +87,19 @@ router.get('/file_data_by_sha/:sha', (req, res, next)=>{
         } );
 });
 
+router.get('/files_with_sha', (req, res, next )=>{
+    //TODO Plan für diesen call
+    //1. liefert alle Fileversionen (File/Commit SHA Pairs) zurück als array
+    //2. können dann an anderer stelle für qualitätsberechnung verwendet werden
+
+    //TODO Sinn: Parameter können auch woanders berechnet werden als in NodeJS: PHP, Java, whatever...solange die Parameter in dieser Form ankommen
+    //TODO damit die Parameter so ankommen können die caller /read/files_with_sha aufrufen, da kommen dann alle files mit sha als array mit
+    //TODO der Plan wäre also: create/database -> dann sind mal alle file/sha pairs existent (also alle fileversionen im repo liegen dann in der db)
+    //TODO dann kann man von irgendwo aus /read/files_with_sha aufrufen
+    //TODO qualität berechnen
+    //TODO und wieder zurückschicken
+});
+
 /* GET test file data*/
 router.get('/test_plato', (req, res, next)=>{
 
@@ -111,48 +124,6 @@ router.get('/test_plato', (req, res, next)=>{
     ));
 
 });
-
-//TODO deprecated: maybe use this later for commits with file links, but refactor queries
-/*var commits = arangoDatabaseConnection.query("FOR c IN commit RETURN c").then( function(values){ return values; } );
-var files = arangoDatabaseConnection.query("FOR f IN file RETURN f").then( function(values){ return values; } );
-
-Promise.all( [commits, files] ).then( function(values){
-
-    //creating File array from result with links consisting of files from the same name
-    var filesResult = values[1]["_result"];
-    var fileDataArray = [];
-    for( var i=0; i<filesResult.length;i++ )
-    {
-        var filesResult = values[1]["_result"];
-        var fileDataArray = [];
-        for( var i=0; i<filesResult.length;i++ )
-        {
-            var fileLinkArray = [];
-            //so that files do net get counted twice
-            for( var j=i; j<filesResult.length;j++ )
-            {
-                if( filesResult[i].name == filesResult[j].name)
-                    fileLinkArray.push( {"name":filesResult[j].name, "commitId":filesResult[j].commitId} )
-            }
-
-            if( fileLinkArray.length > 1 )
-                fileDataArray.push( { links:fileLinkArray,color:"red"} )
-        }
-    }
-
-    //creating Commit array from result
-    var commitResult = values[0]["_result"];
-    var commitDataArray = commitResult;
-
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(JSON.stringify(
-        {
-            "commit-nodes":commitDataArray,
-            "file-links":fileDataArray
-        }
-    ));
-} );*/
 
 
 module.exports = router;
