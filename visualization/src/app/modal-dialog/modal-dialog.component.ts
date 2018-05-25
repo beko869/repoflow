@@ -14,13 +14,11 @@ export class ModalDialogComponent {
     public show(): void {
         this.visible = true;
         this.visibleAnimate = true;
-        //setTimeout(() => this.visibleAnimate = true, 100);
     }
 
     public hide(): void {
         this.visibleAnimate = false;
         this.visible = false;
-        //setTimeout(() => this.visible = false, 300);
     }
 
     public onContainerClicked(event: MouseEvent): void {
