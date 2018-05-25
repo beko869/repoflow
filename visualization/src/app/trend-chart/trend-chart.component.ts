@@ -164,15 +164,6 @@ export class TrendChartComponent implements OnInit {
         //this.trendVisualizationWrapper.attr("display","inline");
     }
 
-    public showFileDetailView( paraCodeMirrorContent = "" ): void {
-        //this.codeEditor.setLeftContent( paraCodeMirrorContent );
-        //this.codeEditor.setRightContent( paraCodeMirrorContent );
-    }
-
-    /*public getFileDetailViewVisible(): boolean {
-        return this.isFileDetailViewVisible;
-    }*/
-
 
     /**
      * initializes an svg element in the div area of the visualization
@@ -460,9 +451,10 @@ export class TrendChartComponent implements OnInit {
      */
     public renderFileViewNodes( paraFileNodesData: any ): void {
         let currentXScale = this.getCurrentXScale();
+        let that = this;
 
         //add main dot to fileview nodes
-        this.trendVisualizationWrapper.append('g').selectAll('rect')
+        let currentNode = this.trendVisualizationWrapper.append('g').selectAll('rect')
             .data(paraFileNodesData)
             .enter()
             .append('circle')
@@ -470,15 +462,37 @@ export class TrendChartComponent implements OnInit {
             .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
             .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-            .attr('r', 10)
-            .on("click", (d) => {
-                if( this.diffPanel.getLeftFileFixated() ) {
-                    this.diffPanelValueService.setRightContent( d.f.fileContent )
-                    this.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
+            .attr('r', 10);
+
+        currentNode.on("click", function(d) {
+                if( that.diffPanel.getLeftFileFixated() ) {
+                    that.diffPanelValueService.setRightContent( d.f.fileContent )
+                    that.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
+
+                    d3Selection.select('.right-fixated-file-node')
+                        .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
+                        .attr('r',10)
+                        .attr('stroke',that.fileColorLookupArray[d.f.name].color );
+
+                    d3Selection.select(this)
+                        .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node')
+                        .attr('r',15)
+                        .attr('stroke','red');
                 }
                 else {
-                    this.diffPanelValueService.setLeftContent( d.f.fileContent )
-                    this.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
+                    that.diffPanelValueService.setLeftContent( d.f.fileContent )
+                    that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
+
+                    d3Selection.select('.left-fixated-file-node')
+                        .attr('r',10)
+                        .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
+                        .attr('stroke',that.fileColorLookupArray[d.f.name].color );
+
+                    d3Selection.select(this)
+                        .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node')
+                        .attr('r',15)
+                        .attr('stroke','red');
+
                 }
 
                 //this.showFileDetailView( d.f.fileContent );
