@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Promise = require('bluebird');
-const nodegit = require('nodegit');
-const path = require('path');
-const jshint = require('jshint');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection');
+const helper = require('../helper');
 
 
 /* GET mock listing. */
@@ -17,8 +15,9 @@ router.get('/initial_data', (req, res, next)=>{
     let commitsQueryPromise = arangoDatabaseConnection.query("FOR c IN commit RETURN c").then( (values)=>{ return values; } );
     let fileCcolorsQueryPromise = arangoDatabaseConnection.query("FOR fc IN file_color RETURN fc").then( (values)=>{ return values; } );
     let filesPromise = arangoDatabaseConnection.query("FOR f IN file COLLECT name = f.name RETURN name").then( (values)=>{ return values; } ); //TODO join auf die color tabelle
+    let qualityPromise = arangoDatabaseConnection.query("FOR qm IN quality_metric RETURN qm").then( (values)=>{ return values; } );
 
-    Promise.all( [commitsQueryPromise, filesPromise, fileCcolorsQueryPromise] ).then( (values)=>{
+    Promise.all( [commitsQueryPromise, filesPromise, fileCcolorsQueryPromise, qualityPromise] ).then( (values)=>{
         //creating Commit array from result
         let commitResult = values[0]["_result"];    //for eventual modifying purposes
         let commitDataArray = commitResult;
@@ -31,13 +30,19 @@ router.get('/initial_data', (req, res, next)=>{
         let fileColorResult = values[2]["_result"]; //for eventual modifying purposes
         let fileColorDataArray = fileColorResult;
 
+        //creating file color array from file color result
+        let qualityMetricResult = values[3]["_result"]; //for eventual modifying purposes
+        let qualityMetricArray = qualityMetricResult;
+
+
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.send(JSON.stringify(
             {
                 "commit-nodes":commitDataArray,
                 "file-names":fileDataArray,
-                "file-colors":fileColorDataArray
+                "file-colors":fileColorDataArray,
+                "quality-metrics":qualityMetricArray
             }
         ));
     } );
@@ -98,9 +103,68 @@ router.get('/files_with_sha', (req, res, next )=>{
     //TODO dann kann man von irgendwo aus /read/files_with_sha aufrufen
     //TODO qualität berechnen
     //TODO und wieder zurückschicken
+
+    helper.selectSHAFileArray()
+        .then( (values)=>{
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify(
+                {
+                    "files":values
+                }
+            ));
+        } );
 });
 
+router.get('/min_max_for_metric/:metric', (req, res, next )=>{
+    arangoDatabaseConnection
+        .query("FOR f IN file COLLECT AGGREGATE min = MIN( f." + req.params.metric + " ), max = MAX( f." + req.params.metric + " ) RETURN { min, max }")
+        .then( (values)=>{  res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify({
+                    "min_max_values":values._result
+                }
+            ));
+        });
+});
+
+router.get('/file_data_by_quality_metric_key/:metric', (req, res, next )=>{
+    arangoDatabaseConnection
+        .query( "FOR qm IN quality_metric FILTER qm.key=='lines_of_code' RETURN qm.file_types" )
+        .then( (fileTypeResult)=>{
+            let fileTypesArray = fileTypeResult._result[0];
+            return arangoDatabaseConnection
+                .query("FOR f IN file COLLECT name = f.name RETURN name")
+                .then( (fileNamesResult)=>{
+                    let matchedFileNames = [];
+                    let fileNamesArray = fileNamesResult._result;
+
+                    //check for filetype
+                    fileNamesArray.forEach( (fileName)=>{
+                        for( let i = 0; i<fileTypesArray.length; i++ ){
+                            let fileTypeLength = fileTypesArray[i].length;
+                            if( fileName.substr( fileName.length - fileTypeLength ) == fileTypesArray[i] ){
+                                matchedFileNames.push( fileName );
+                            }
+                        }
+                    });
+
+                    return matchedFileNames;
+                });
+        })
+        .then( ( matchedFileNamesArray )=>{
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify({
+                    "matched_file_names":matchedFileNamesArray
+                }
+            ));
+        });
+});
+
+
+
 /* GET test file data*/
+/*
 router.get('/test_plato', (req, res, next)=>{
 
 
@@ -123,7 +187,7 @@ router.get('/test_plato', (req, res, next)=>{
         }
     ));
 
-});
+});*/
 
 
 module.exports = router;

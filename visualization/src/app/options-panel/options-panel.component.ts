@@ -3,7 +3,7 @@ import {
     Output
 } from '@angular/core';
 
-import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
+import {OptionsPanelValuesService} from "../shared/options-panel-values.service";
 
 @Component({
     selector: 'app-options-panel',
@@ -16,7 +16,7 @@ export class OptionsPanelComponent {
 
     @Output() switchViewEvent = new EventEmitter<number>();
     @Output() addFileToVisualizationEvent = new EventEmitter<string>();
-    @Output() addCommitQualityToVisualizationEvent = new EventEmitter<string>();
+    @Output() qualityMetricChangedEvent = new EventEmitter<string>();
     @Output() removeFileFromVisualizationEvent = new EventEmitter<string>();
     @Output() removeCommitQualityFromVisualizationEvent = new EventEmitter<string>();
     @Output() clearFileViewEvent = new EventEmitter<string>();
@@ -30,7 +30,7 @@ export class OptionsPanelComponent {
     @Output() showFileAndCommitViewsEvent = new EventEmitter<string>();
     private selectOptions: any;
 
-    constructor( private optionsPanelValueService:OptionsPanelValueService, private ref:ChangeDetectorRef ) {
+    constructor(private optionsPanelValueService:OptionsPanelValuesService, private ref:ChangeDetectorRef ) {
         this.selectOptions = {"width":"100%"}
     }
 
@@ -41,6 +41,15 @@ export class OptionsPanelComponent {
      */
     public setFileList( paraValuesArray ): void {
         this.optionsPanelValueService.setFileList( paraValuesArray );
+        this.ref.markForCheck();
+    }
+
+    /**
+     * sets the file list for the file list select from the options panel value service
+     * @param {string[]} paraValues
+     */
+    public setQualityMetricList( paraValuesArray ): void {
+        this.optionsPanelValueService.setQualityMetricList( paraValuesArray );
         this.ref.markForCheck();
     }
 
@@ -85,9 +94,8 @@ export class OptionsPanelComponent {
      * uses the optionsPanelValueService to return the list of all commit qualities
      * @returns {string[]}
      */
-    public getCommitQualityListForSelect(): any {
-        //TODO real data
-        return [{"id":'0',"text":"--- choose commit quality ---"},{"id":"m1","text":"m1"},{"id":"m2","text":"m2"},{"id":"m3","text":"m3"}];
+    public getQualityMetricListForSelect(): any {
+        return this.optionsPanelValueService.getQualityMetricListForSelect();
     }
 
     /**
@@ -132,10 +140,10 @@ export class OptionsPanelComponent {
         }
     }
 
-    public setCommitQualitySelectValueAndEmitAddCommitToVisualizationEvent( paraValue: string ): void {
+    public setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( paraValue: string ): void {
         if( paraValue != '0' ) {
-            this.optionsPanelValueService.setCommitQualitySelectValue( paraValue );
-            this.addCommitQualityToVisualizationEvent.emit();
+            this.optionsPanelValueService.setQualityMetricSelectValue( paraValue );
+            this.qualityMetricChangedEvent.emit();
             this.ref.markForCheck();
         }
     }

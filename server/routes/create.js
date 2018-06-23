@@ -3,12 +3,11 @@ const path = require('path');
 const nodegitKit = require('nodegit-kit');
 const nodegit = require('nodegit');
 const Promise = require('bluebird');
-const jshint = require('jshint');
-const tslint = require("tslint");
-const tss = require("typescript-simple");
 const arangoDatabaseConnection = require('../arangoDatabaseConnection')
 const colorScheme = require('../colorScheme');
 const router = express.Router();
+const helper = require('../helper');
+const jsDemo = require('../quality/quality_javascript_demo');
 
 
 /* GET create data listing. */
@@ -185,59 +184,15 @@ router.put('/database', (req, res, next)=>{
                                                 commit.getEntry(fileResult[i].name)
                                                     .then((entry) => {
                                                         entry.getBlob().then((blob) => {
-                                                            //if( entry.sha() == fileResult[i].commitId ) {
-                                                            let fileType = fileResult[i].name.slice(-3);
-                                                            let fileContent = String(blob);
-
-                                                            if( fileType == '.js' )
-                                                            {
-                                                                //javascript code quality check
-                                                                jshint.JSHINT("function(a){ if(a=1){ if(b=2){ a+b=3; } } }", {undef: true,esversion:6}, {foo:false});
-                                                                let qualityData = jshint.JSHINT.data();
-
-                                                                console.log("//-----------------------//");
-                                                                console.log(qualityData.functions[0]);
-                                                                console.log(fileResult[i].name);
-                                                                console.log("//-----------------//");
-                                                            }
-
-                                                            /*if( fileType == '.ts' )
-                                                            {
-                                                                try {
-                                                                    //console.log("its ts");
-                                                                    let options = {
-                                                                        fix: false,
-                                                                        formatter: "json"
-                                                                    };
-
-                                                                    const rawConfig = tslint.Configuration.DEFAULT_CONFIG;
-
-                                                                    rawConfig.rules = {
-                                                                        semicolon: [true, 'always'],
-                                                                    };
-
-                                                                    console.log(rawConfig);
-
-                                                                    let linter = new tslint.Linter(options);
-                                                                    linter.lint(fileResult[i].name, String(blob), rawConfig );
-                                                                    let result = linter.getResult();
-
-                                                                    //console.log(result);
-                                                                }catch(e){console.log(e);process.exit(1);}
-                                                            }*/
-
-
                                                             fileUpdatePromises.push(arangoDatabaseConnection.query(
                                                                 `UPDATE  
                                                                 @key
                                                              WITH {
-                                                                fileContent: @fileContent,
-                                                                complexity: @complexity}
+                                                                fileContent: @fileContent}
                                                              IN 
                                                                 file`, {
                                                                     key: fileResult[i]._key,
-                                                                    fileContent: String(blob),
-                                                                    complexity: ''
+                                                                    fileContent: String(blob)
                                                                 }));
                                                             //}
                                                         });
@@ -252,7 +207,8 @@ router.put('/database', (req, res, next)=>{
         });
 });
 
-router.put('/add/quality/:files_with_sha_and_computed_metric', (req,res,next)=>{
+
+router.put('/quality', (req,res,next)=>{
     //TODO Plan für diesen call
     //1. parameter kommt als array hier an (JSON decode)
     //2. array wird gelooped
@@ -264,10 +220,67 @@ router.put('/add/quality/:files_with_sha_and_computed_metric', (req,res,next)=>{
     //TODO dann kann man von irgendwo aus /read/files_with_sha aufrufen
     //TODO qualität berechnen
     //TODO und wieder zurückschicken
+
+    let qualityMetricKeyValueArray = [];
+
+    //DEMONSTRATION
+    if( req.body.compute_js_metrics == 1 )
+    {
+        //Demonstration mit JSHint
+        helper.selectSHAFileArray()
+            .then( ( shaFileArray ) => {
+                //console.log(shaFileArray);
+                return jsDemo.computeComplexityWithJsHINT( shaFileArray )
+            })
+            .then( ( qualityValueArray ) => {
+                //TODO check array for error handling
+                qualityMetricKeyValueArray = qualityValueArray;
+                return helper.insertQualityMetricCollection( qualityMetricKeyValueArray[0] );
+            } )
+            .then( ( insertQualityMetricCollectionResult ) => {
+                //TODO check insertResult for error handling
+                return helper.updateFileCollectionWithQualityData( qualityMetricKeyValueArray[1] );
+            })
+            .then( ( updateFileCollectionResult ) => {
+                return helper.selectCommitsForUpdateArray()
+            } )
+            .then( ( commitCollectionResult ) => {
+                return helper.updateCommitCollection( qualityMetricKeyValueArray, commitCollectionResult )
+            } )
+            .then( (update) => {
+                //TODO error handling
+                res.send( {status:200, message:"Quality Metric(s) created!"} );
+            } );
+
+    }
+    else
+    {
+        //der Parameter muss immer folgendes Format haben:
+        //[ [ {key:qualityMetricKey,label:qualityMetricName},file_types:['.js',...]} ], [{_key:arangoDBKey,qualityMetricKey:qualityMetricValue},...] ]
+
+        if( req.body.files_with_sha_and_computed_metric != '' )
+        {
+            qualityMetricKeyValueArray = req.body.files_with_sha_and_computed_metric;
+
+            helper.insertQualityMetricCollection( qualityMetricKeyValueArray[0] )
+            .then( ( insertQualityMetricCollectionResult ) => {
+                //TODO check insertResult for error handling
+                return helper.updateFileCollectionWithQualityData( qualityMetricKeyValueArray[1] );
+            })
+            .then( ( updateFileCollectionResult ) => {
+                return helper.selectCommitsForUpdateArray()
+            } )
+            .then( ( commitCollectionResult ) => {
+                return helper.updateCommitCollection( qualityMetricKeyValueArray, commitCollectionResult )
+            } )
+            .then( (update) => {
+                //TODO error handling
+                res.send( {status:200, message:"Quality Metric(s) created!"} );
+            } );
+        }
+    }
 });
 
-router.put('/test', (req, res, next)=>{
 
-});
 
 module.exports = router;

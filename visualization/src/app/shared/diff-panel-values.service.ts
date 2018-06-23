@@ -1,11 +1,11 @@
 import {Injectable} from '@angular/core';
-import {UtilityService} from "./UtilityService";
+import {UtilityService} from "./utility.service";
 
 @Injectable()
 /**
  * used for setting and retrieving values in and from the diff panel component
  */
-export class DiffPanelValueService {
+export class DiffPanelValuesService {
     private leftFileData: any = { fileName:'N/A', sha:'N/A' };
     private rightFileData: any = { fileName:'N/A', sha:'N/A' };
 

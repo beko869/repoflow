@@ -7,13 +7,12 @@ import * as d3Axis from 'd3-axis';
 import * as d3Array from 'd3-array';
 import * as d3TimeFormat from 'd3-time-format';
 import * as d3Shape from 'd3-shape';
-import * as d3Request from 'd3-request';
 import * as d3Zoom from 'd3-zoom';
 import * as moment from 'moment';
-import {environment} from "../../environments/environment";
-import {UtilityService} from '../shared/UtilityService';
-import {OptionsPanelValueService} from "../shared/OptionsPanelValueService";
-import {DiffPanelValueService} from "../shared/DiffPanelValueService";
+import {UtilityService} from '../shared/utility.service';
+import {OptionsPanelValuesService} from "../shared/options-panel-values.service";
+import {DiffPanelValuesService} from "../shared/diff-panel-values.service";
+import {ApiService} from "../shared/api.service";
 
 
 @Component({
@@ -28,6 +27,8 @@ export class TrendChartComponent implements OnInit {
 
     private width: number;
     private height: number;
+    private normalizationQuotient: number;
+    private normalizationMinValue: number;
     private margin: any;
     private yScale: any;
     private xScale: any;
@@ -46,29 +47,25 @@ export class TrendChartComponent implements OnInit {
     @ViewChild('diffPanel') diffPanel;
 
 
-    constructor( private utility: UtilityService, private optionsPanelValueService: OptionsPanelValueService, private diffPanelValueService: DiffPanelValueService ) {
+    constructor(private utility: UtilityService, private optionsPanelValueService: OptionsPanelValuesService, private diffPanelValueService: DiffPanelValuesService, private apiService: ApiService ) {
         this.isFileDetailViewVisible = false;
         this.margin = {top:0, right:0, bottom:20, left:0};
         this.xScaleZoomed = null;
     }
 
     ngOnInit() {
-
         this.width = window.document.getElementById( 'trend-chart' ).getBoundingClientRect().width - this.margin.left - this.margin.right;
         this.height = window.innerHeight*0.75 - this.margin.top - this.margin.bottom;
 
-
-        d3Request.json(environment.dataHost + 'read/initial_data', (error, data) => {
+        this.apiService.getInitialVisualizationData()
+            .subscribe( (data)=>{
             this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
-
-            //this.initTooltip();
             this.initScales( data["commit-nodes"] );
             this.initAxis();
             this.initSvg();
             this.renderAxis();
-            this.initOptionsPanel( data["file-names"], this.fileColorLookupArray );
-
-        })
+            this.initOptionsPanel( data["file-names"], this.fileColorLookupArray, data["quality-metrics"] );
+        });
     }
 
     /**
@@ -78,9 +75,10 @@ export class TrendChartComponent implements OnInit {
         this.fadeFileViewToBackground();
         this.fadeCommitViewToForeGround();
 
-        d3Request.json(environment.dataHost + 'read/commit_data', (error, data) => {
-            this.renderCommitView( data, paraQuality );
-        });
+        this.apiService.getCommitData()
+            .subscribe( (data)=>{
+                this.renderCommitView( data, paraQuality );
+            });
     }
 
 
@@ -91,9 +89,10 @@ export class TrendChartComponent implements OnInit {
         this.fadeCommitViewToBackground();
         this.fadeFileViewToForeground();
 
-        d3Request.json(environment.dataHost + 'read/file_data_by_name/'+encodeURIComponent( paraFilePath ), (error, data) => {
-            this.renderFileView( data );
-        });
+        this.apiService.getFileDataByFilePath( paraFilePath )
+            .subscribe( (data)=>{
+                this.renderFileView( data );
+            });
     }
 
 
@@ -104,7 +103,6 @@ export class TrendChartComponent implements OnInit {
      */
     public renderCommitView( paraData: any, paraCommitQuality: string ): void {
         this.renderCommitViewNodes( paraData["commit-nodes"], paraCommitQuality );
-        //this.renderCommitViewLinks( paraData["commit-nodes"], paraCommitQuality );
         this.renderCommitViewBalloonLines( paraData["commit-nodes"], paraCommitQuality );
     }
 
@@ -240,9 +238,10 @@ export class TrendChartComponent implements OnInit {
     /**
      * initialize the options panel
      */
-    public initOptionsPanel( paraFileNamesArray: string[], paraFileColorsArray: any ): void {
-        this.optionsPanel.setFileList( paraFileNamesArray );
+    public initOptionsPanel( paraFileNamesArray: string[], paraFileColorsArray: any, paraQualityMetricArray: any ): void {
+        //this.optionsPanel.setFileList( paraFileNamesArray );
         this.optionsPanel.setFileColorList( paraFileColorsArray );
+        this.optionsPanel.setQualityMetricList( paraQualityMetricArray );
     }
 
     /**
@@ -264,8 +263,7 @@ export class TrendChartComponent implements OnInit {
                 //format x-axis to display hours and minutes at a specific scaling threshold
                 if( d3Selection.event.transform.k > 7 ){
                     this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m. %H:%M"));
-                }
-                else {
+                } else {
                     this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m.%Y"));
                 }
 
@@ -306,21 +304,9 @@ export class TrendChartComponent implements OnInit {
         .enter()
         .append('circle')
         .attr('class','commit-view-node '+paraQualityMetric)
-        .attr('cx', (d)=>{ console.log(currentXScale( new Date(d.datetime) ));return currentXScale( new Date(d.datetime) ) })
+        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
         .attr('cy', (d)=>{
-
-            //TODO besser machen
-            if( paraQualityMetric == "m1" ){
-                return this.yScale( d.quality_metric_1*100 )
-            }
-            if( paraQualityMetric == "m2" ){
-                return this.yScale( d.quality_metric_2*100 )
-            }
-            if( paraQualityMetric == "m3" ){
-                return this.yScale( d.quality_metric_3*100 )
-            }
-            //TODO ende besser machen
-            //return this.yScale( d.quality_metric_1*100 )
+            return this.yScale( this.getNormalizedValue( d[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
         })
         .attr('fill', '#ff7f00')
         .attr('r', (d)=>{ return d.fileCount*2 })
@@ -329,19 +315,7 @@ export class TrendChartComponent implements OnInit {
             this.renderFilesOfCommit( d.id );
         })
         .on("mouseover", (d)=>{
-
-            let qualityValue = 0;
-            //TODO besser machen
-            if (paraQualityMetric == "m1") {
-                qualityValue = d.quality_metric_1;
-            }
-            if (paraQualityMetric == "m2") {
-                qualityValue = d.quality_metric_2;
-            }
-            if (paraQualityMetric == "m3") {
-                qualityValue = d.quality_metric_3;
-            }
-            //TODO ende besser machen
+            let qualityValue = this.getNormalizedValue( d[this.optionsPanelValueService.getQualityMetricSelectValue()] );
 
             this.optionsPanelValueService.setInfo({
                 "value": Math.round( qualityValue * 100 * 100 ) / 100 + " %",
@@ -351,7 +325,7 @@ export class TrendChartComponent implements OnInit {
             });
             this.optionsPanel.ref.markForCheck();
 
-            this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue * 100 );
+            this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue );
         })
         .on("mouseout",()=>{
             this.removeDashedGuideLines();
@@ -407,24 +381,12 @@ export class TrendChartComponent implements OnInit {
             .data(paraCommitNodesData)
             .enter()
             .append('line')
-            .attr('class','commit-view-balloon-line '+paraQualityMetric)
+            .attr('class','commit-view-balloon-line ' + paraQualityMetric)
             .attr('x1', (d)=>{ return currentXScale( new Date(d.datetime) ) })
             .attr('x2', (d)=>{ return currentXScale( new Date(d.datetime) ) })
             .attr('y1', this.height )
             .attr('y2', (d)=>{
-
-                //TODO besser machen
-                if( paraQualityMetric == "m1" ){
-                    return this.yScale( d.quality_metric_1*100 )
-                }
-                if( paraQualityMetric == "m2" ){
-                    return this.yScale( d.quality_metric_2*100 )
-                }
-                if( paraQualityMetric == "m3" ){
-                    return this.yScale( d.quality_metric_3*100 )
-                }
-                //TODO ende besser machen
-                //return this.yScale( d.quality_metric_1*100 )
+                return this.yScale( this.getNormalizedValue( d[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
             })
             .attr("stroke-width", 2)
             .attr("stroke", "#ff7f00");
@@ -434,16 +396,17 @@ export class TrendChartComponent implements OnInit {
      * requests file data and renders the basic commit view
      */
     public renderFilesOfCommit( paraSha: string ) {
-        d3Request.json(environment.dataHost + 'read/file_data_by_sha/'+encodeURIComponent( paraSha ), (error, data) => {
-            for( let i=0;i<data.files.length; i++ )
-            {
-                if( !this.optionsPanelValueService.getSelectedFileList().includes( data.files[i].f.name ) ){
-                    this.optionsPanelValueService.setFileSelectValue( data.files[i].f.name );
+        this.apiService.getFileDataBySHA( paraSha )
+            .subscribe( (data)=>{
+                for( let i=0;i<data.files.length; i++ )
+                {
+                    if( !this.optionsPanelValueService.getSelectedFileList().includes( data.files[i].f.name ) ){
+                        this.optionsPanelValueService.setFileSelectValue( data.files[i].f.name );
+                    }
                 }
-            }
-            this.optionsPanel.ref.markForCheck();
-            this.addFileListToVisualization();
-        });
+                this.optionsPanel.ref.markForCheck();
+                this.addFileListToVisualization();
+            });
     }
 
     /**
@@ -460,7 +423,14 @@ export class TrendChartComponent implements OnInit {
             .append('circle')
             .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
             .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
-            .attr('cy', (d)=>{ return this.yScale( d.f.quality_metric_1*100 ) })
+            .attr('cy', (d)=>{
+                let qualityValue = 0;
+                if( d.f.status != 'deleted' ){
+                    qualityValue = this.getNormalizedValue( d.f[ this.optionsPanelValueService.getQualityMetricSelectValue()] );
+                }
+                return this.yScale( qualityValue );
+
+            })
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
             .attr('r', 10);
 
@@ -500,14 +470,14 @@ export class TrendChartComponent implements OnInit {
             .on("mouseover", (d) => {
                 this.optionsPanelValueService.setInfo( {
                     "filename":d.f.name,
-                    "value": Math.round( d.f.quality_metric_1 * 100 * 100 ) / 100 + " %",
+                    "value": Math.round( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] * 100 * 100 ) / 100 + " %",
                     "sha":d.f.commitId,
                     "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
                 } );
                 this.optionsPanel.ref.markForCheck();
 
-                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), d.f.quality_metric_1*100 );
-                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), d.f.quality_metric_1*100 );
+                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
 
             })
             .on("mouseout", ()=>{
@@ -534,9 +504,14 @@ export class TrendChartComponent implements OnInit {
         let filesSortyByCommitDatetime = paraFileLinksData.sort( dateCompare );
 
         filesSortyByCommitDatetime.forEach( (file)=>{
+            let qualityValue = 0;
+            if( file.f.status != 'deleted' ){
+                qualityValue = this.getNormalizedValue( file.f[ this.optionsPanelValueService.getQualityMetricSelectValue()] );
+            }
+
             fileLinkArray.push({
                 "x": new Date(file.c.datetime),
-                "y": file.f.quality_metric_1*100,
+                "y": qualityValue,
                 "color": file.f.color,
                 "name": file.f.name
             });
@@ -594,22 +569,33 @@ export class TrendChartComponent implements OnInit {
 
 
     /**
-     * switches between commit and file view
+     * sets values for computing normalized values
      */
-    public addCommitQualityToVisualization(): void {
+    public qualityMetricChanged(): void {
 
-        let commitQuality = this.optionsPanelValueService.getCommitQualitySelectValue();
+        //set min and max for axis rendering
+        this.apiService.getMinMaxOfMetric( this.optionsPanelValueService.getQualityMetricSelectValue() )
+            .subscribe( (callResult)=>{
+                this.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                this.normalizationMinValue = callResult.min_max_values[0].min;
+        });
 
-        if( commitQuality == '' ){
-            return;
-        }
-        else {
-            this.doCommitViewRequestAndRender( commitQuality );
-        }
-
-        return;
+        //set file select list
+        this.apiService.getFileDataByFileTypesOfQualityMetric( this.optionsPanelValueService.getQualityMetricSelectValue() )
+            .subscribe( ( fileList )=>{
+                this.optionsPanelValueService.setFileList( fileList.matched_file_names );
+                this.optionsPanel.ref.markForCheck();
+        });
     }
 
+    /**
+     * normalizes the given value in a 1...100 range
+     * @param paraValue
+     * @returns {number}
+     */
+    public getNormalizedValue( paraValue ): number {
+        return ( paraValue - this.normalizationMinValue ) / this.normalizationQuotient * 100;
+    }
 
     /**
      * adds the file to the visualization

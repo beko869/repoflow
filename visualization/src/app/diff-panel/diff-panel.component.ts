@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
-import {DiffPanelValueService} from "../shared/DiffPanelValueService";
+import {DiffPanelValuesService} from "../shared/diff-panel-values.service";
 
 @Component({
     selector: 'app-diff-panel',
@@ -10,7 +10,7 @@ import {DiffPanelValueService} from "../shared/DiffPanelValueService";
 
 export class DiffPanelComponent implements OnInit {
 
-    constructor(private diffPanelValueService: DiffPanelValueService, private ref: ChangeDetectorRef) {
+    constructor(private diffPanelValueService: DiffPanelValuesService, private ref: ChangeDetectorRef) {
     }
 
     ngOnInit() {

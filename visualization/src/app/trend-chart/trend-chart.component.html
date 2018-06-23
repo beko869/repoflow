@@ -2,7 +2,7 @@
   <app-options-panel #optionsPanel
           (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
           (addFileToVisualizationEvent)="addFileToVisualization()"
-          (addCommitQualityToVisualizationEvent)="addCommitQualityToVisualization()"
+          (qualityMetricChangedEvent)="qualityMetricChanged()"
           (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
           (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
           (clearFileViewEvent)="clearFileView()"

@@ -9,7 +9,7 @@ import {
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/merge/merge';
 import 'codemirror';
-import {DiffPanelValueService} from "../shared/DiffPanelValueService";
+import {DiffPanelValuesService} from "../shared/diff-panel-values.service";
 
 declare const CodeMirror;
 
@@ -27,7 +27,7 @@ export class CodeEditorComponent implements OnInit {
 
     @ViewChild('codeMirrorElement') codeMirrorElement;
 
-    constructor(private ref: ChangeDetectorRef, private diffPanelValueService: DiffPanelValueService) {
+    constructor(private ref: ChangeDetectorRef, private diffPanelValueService: DiffPanelValuesService) {
         this.codeMirrorConfiguration = {
             value: '',
             origLeft: null,

@@ -1,11 +1,11 @@
 import {Injectable} from '@angular/core';
-import {UtilityService} from "./UtilityService";
+import {UtilityService} from "./utility.service";
 
 @Injectable()
 /**
  * used for setting and retrieving values in and from the options panel component
  */
-export class OptionsPanelValueService {
+export class OptionsPanelValuesService {
 
     private fileSelectValue: string;
     private fileRemoveValue: string;
@@ -14,9 +14,10 @@ export class OptionsPanelValueService {
     private fileColorList: any;
     private selectedFileList: string[] = [];
     private selectedCommitQualityList: string[] = [];
-    private commitQualitySelectValue: string;
+    private qualityMetricSelectValue: string;
     private isFileInfo: boolean;
     private info: any;
+    private qualityMetricList: string[];
 
 
     public setIsFileInfo( paraValue: boolean ){
@@ -45,8 +46,8 @@ export class OptionsPanelValueService {
         this.selectedFileList.push( paraValue );
     }
 
-    public setCommitQualitySelectValue( paraValue: string ){
-        this.commitQualitySelectValue = paraValue;
+    public setQualityMetricSelectValue( paraValue: string ){
+        this.qualityMetricSelectValue = paraValue;
         this.selectedCommitQualityList.push( paraValue );
     }
 
@@ -59,8 +60,8 @@ export class OptionsPanelValueService {
         return this.fileSelectValue;
     }
 
-    public getCommitQualitySelectValue():string {
-        return this.commitQualitySelectValue;
+    public getQualityMetricSelectValue():string {
+        return this.qualityMetricSelectValue;
     }
 
 
@@ -88,6 +89,26 @@ export class OptionsPanelValueService {
 
 
     /**
+     * sets the values of the file list
+     * @param {string[]} paraFileList
+     */
+    public setQualityMetricList( paraQualityMetricList: any ) {
+        let keyValueArray = [];
+
+        for( let i=0; i<paraQualityMetricList.length; i++ ){
+            keyValueArray.push({
+                id: paraQualityMetricList[i].key,
+                text: paraQualityMetricList[i].label
+            });
+        }
+
+        keyValueArray.unshift( {id:0,text:"--- choose quality metric ---"} );
+
+        this.qualityMetricList = keyValueArray;
+    }
+
+
+    /**
      * sets the values of the file color list
      * @param {} paraFileColorList
      */
@@ -102,6 +123,14 @@ export class OptionsPanelValueService {
      */
     public getFileList(): any {
         return this.fileList;
+    }
+
+    /**
+     * gets the values of the file list
+     * @returns {any}
+     */
+    public getQualityMetricListForSelect(): any {
+        return this.qualityMetricList;
     }
 
     /**
