@@ -5,13 +5,13 @@
              [options]="getSelectLayoutOptions()"
              (valueChanged)="setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( $event.value )">
     </select2>
-    <div id="selected-commit-qualities-holder">
+    <!--<div id="selected-commit-qualities-holder">
       <div class="list-for-delete-panel"
            *ngFor="let commitQuality of getCommitQualityList()">
         {{commitQuality}}
         <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
       </div>
-    </div>
+    </div>-->
   </div>
   <hr/>
   <div class="search-input-group">

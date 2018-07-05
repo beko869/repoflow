@@ -58,11 +58,16 @@ export class ApiService {
     /**
      * get call for retrieving file data by commit sha
      * @param {string} paraSHA the sha of the commit where files should be found
+     * @param paraQualityMetricKey currently selected quality key
      * @returns {Observable<any>}
      */
-    public getFileDataBySHA(paraSHA: string) {
+    public getFileDataBySHAAndQualityKey(paraSHA: string, paraQualityMetricKey: string) {
+
+        console.log(paraQualityMetricKey);
+        console.log(paraSHA);
+
         return this.http
-            .get(API_URL + 'read/file_data_by_sha/' + encodeURIComponent(paraSHA))
+            .get(API_URL + 'read/file_data_by_sha/' + encodeURIComponent(paraSHA) + '/' + paraQualityMetricKey)
             .map(response => {
                 return response.json();
             })

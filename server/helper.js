@@ -66,4 +66,20 @@ helper.updateCommitCollection = function updateCommitCollection( paraQualityMetr
     return commitCollection.bulkUpdate( updateArray );
 };
 
+helper.getFileTypeMatches = function getFileTypeMatches( paraFileNamesArray, paraFileTypesArray ) {
+    let matchedFileNames = [];
+
+    //check for filetype
+    paraFileNamesArray.forEach( (fileName)=>{
+        for( let i = 0; i<paraFileTypesArray.length; i++ ){
+            let fileTypeLength = paraFileTypesArray[i].length;
+            if( fileName.substr( fileName.length - fileTypeLength ) == paraFileTypesArray[i] ){
+                matchedFileNames.push( fileName );
+            }
+        }
+    });
+
+    return matchedFileNames;
+};
+
 module.exports = helper;

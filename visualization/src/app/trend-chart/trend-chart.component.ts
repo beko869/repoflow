@@ -318,7 +318,7 @@ export class TrendChartComponent implements OnInit {
             let qualityValue = this.getNormalizedValue( d[this.optionsPanelValueService.getQualityMetricSelectValue()] );
 
             this.optionsPanelValueService.setInfo({
-                "value": Math.round( qualityValue * 100 * 100 ) / 100 + " %",
+                "value": d[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
                 "sha": d.id,
                 "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
                 "filecount": d.fileCount
@@ -396,7 +396,7 @@ export class TrendChartComponent implements OnInit {
      * requests file data and renders the basic commit view
      */
     public renderFilesOfCommit( paraSha: string ) {
-        this.apiService.getFileDataBySHA( paraSha )
+        this.apiService.getFileDataBySHAAndQualityKey( paraSha, this.optionsPanelValueService.getQualityMetricSelectValue() )
             .subscribe( (data)=>{
                 for( let i=0;i<data.files.length; i++ )
                 {
@@ -470,7 +470,7 @@ export class TrendChartComponent implements OnInit {
             .on("mouseover", (d) => {
                 this.optionsPanelValueService.setInfo( {
                     "filename":d.f.name,
-                    "value": Math.round( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] * 100 * 100 ) / 100 + " %",
+                    "value": d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
                     "sha":d.f.commitId,
                     "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
                 } );
