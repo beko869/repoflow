@@ -3,6 +3,7 @@ const router = express.Router();
 const Promise = require('bluebird');
 const arangoDatabaseConnection = require('../arangoDatabaseConnection');
 const helper = require('../helper');
+const nodegit = require('nodegit');
 
 
 /* GET mock listing. */
@@ -178,6 +179,18 @@ router.get('/file_data_by_quality_metric_key/:metric', (req, res, next) => {
                 }
             ));
         });
+});
+
+router.get( '/clone', (req, res, next) => {
+    let repositoryURL = req.query.repo_url;
+    let repositoryDirectory = req.query.repo_directory;
+
+    nodegit.Clone(repositoryURL, repositoryDirectory).then(function( repository ) {
+        res.send( {status:200, message:'cloned ' + repositoryURL } );
+    })
+    .catch((err,m)=>{
+        res.send( {status:500, errno: err, message: m } );
+    });
 });
 
 

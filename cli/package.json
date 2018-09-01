@@ -1,0 +1,32 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "description": "Command Line Interface for Repoflow API",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "repoflow"
+  },
+  "keywords": [
+    "cli",
+    "visualization"
+  ],
+  "author": "Benjamin Kowatsch",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "commander": "^2.17.1",
+    "figlet": "^1.2.0",
+    "inquirer": "^6.1.0",
+    "meow": "^5.0.0",
+    "request": "^2.88.0",
+    "shelljs": "^0.8.2"
+  },
+  "bin": {
+    "repoflow": "./cli.js"
+  }
+}

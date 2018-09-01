@@ -21,7 +21,7 @@ export class ApiService {
      */
     public getInitialVisualizationData() {
         return this.http
-            .get(API_URL + 'read/initial_data')
+            .get(API_URL + 'get/initial_data')
             .map(response => {
                 return response.json();
             })
@@ -34,7 +34,7 @@ export class ApiService {
      */
     public getCommitData() {
         return this.http
-            .get(API_URL + 'read/commit_data')
+            .get(API_URL + 'get/commit_data')
             .map(response => {
                 return response.json();
             })
@@ -48,7 +48,7 @@ export class ApiService {
      */
     public getFileDataByFilePath(paraFilePath: string) {
         return this.http
-            .get(API_URL + 'read/file_data_by_name/' + encodeURIComponent(paraFilePath))
+            .get(API_URL + 'get/file_data_by_name/' + encodeURIComponent(paraFilePath))
             .map(response => {
                 return response.json();
             })
@@ -67,7 +67,7 @@ export class ApiService {
         console.log(paraSHA);
 
         return this.http
-            .get(API_URL + 'read/file_data_by_sha/' + encodeURIComponent(paraSHA) + '/' + paraQualityMetricKey)
+            .get(API_URL + 'get/file_data_by_sha/' + encodeURIComponent(paraSHA) + '/' + paraQualityMetricKey)
             .map(response => {
                 return response.json();
             })
@@ -81,7 +81,7 @@ export class ApiService {
      */
     public getFileDataByFileTypesOfQualityMetric(paraQualityMetricKey: string) {
         return this.http
-            .get(API_URL + 'read/file_data_by_quality_metric_key/' + paraQualityMetricKey)
+            .get(API_URL + 'get/file_data_by_quality_metric_key/' + paraQualityMetricKey)
             .map(response => {
                 return response.json();
             })
@@ -95,7 +95,7 @@ export class ApiService {
      */
     public getMinMaxOfMetric(paraMetric: string) {
         return this.http
-            .get(API_URL + 'read/min_max_for_metric/' + paraMetric)
+            .get(API_URL + 'get/min_max_for_metric/' + paraMetric)
             .map(response => {
                 return response.json();
             })

@@ -82,4 +82,19 @@ helper.getFileTypeMatches = function getFileTypeMatches( paraFileNamesArray, par
     return matchedFileNames;
 };
 
+helper.truncateDatabase = truncateDatabase = () => {
+    let dropPromiseArray = [];
+
+    dropPromiseArray.push( arangoDatabaseConnection.collection( 'commit' ).truncate() );
+    dropPromiseArray.push( arangoDatabaseConnection.collection( 'file' ).truncate() );
+    dropPromiseArray.push( arangoDatabaseConnection.collection( 'file_color' ).truncate() );
+    dropPromiseArray.push( arangoDatabaseConnection.collection( 'quality_metric' ).truncate() );
+
+    return Promise.all(dropPromiseArray).then( ()=>{
+        return true;
+    }).catch( (err) => {
+        return false;
+    });
+};
+
 module.exports = helper;
