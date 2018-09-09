@@ -24,10 +24,12 @@ export class OptionsPanelComponent {
     @Output() clearFileDetailViewEvent = new EventEmitter<string>();
     @Output() showFileDetailViewEvent = new EventEmitter<string>();
     @Output() addSelectedFileListToVisualizationEvent = new EventEmitter<string>();
+    @Output() addFileToModuleWrapperEvent = new EventEmitter<string>();
     @Output() addSelectedCommitQualityListToVisualizationEvent = new EventEmitter<string>();
     @Output() fadeFileViewEvent = new EventEmitter<string>();
     @Output() fadeCommitViewEvent = new EventEmitter<string>();
     @Output() showFileAndCommitViewsEvent = new EventEmitter<string>();
+    @Output() removeFileFromModuleListEvent = new EventEmitter<string>();
     private selectOptions: any;
 
     constructor(private optionsPanelValueService:OptionsPanelValuesService, private ref:ChangeDetectorRef ) {
@@ -120,11 +122,11 @@ export class OptionsPanelComponent {
         this.ref.markForCheck();
     }
 
-    public removeFromSelectedCommitQualityList( paraValueToBeRemoved:string ): void {
+    /*public removeFromSelectedCommitQualityList( paraValueToBeRemoved:string ): void {
         this.optionsPanelValueService.removeFromSelectedCommitQualityList( paraValueToBeRemoved );
         this.removeCommitQualityFromVisualizationEvent.emit();
         this.ref.markForCheck();
-    }
+    }*/
 
 
     /**
@@ -171,6 +173,23 @@ export class OptionsPanelComponent {
         this.clearFileView();
         this.showFileDetailViewEvent.emit();
         this.ref.markForCheck();
+    }
+
+    public emitAddFileToModuleWrapperEvent( paraFile ): void {
+        this.optionsPanelValueService.addFileToModuleFileData( paraFile );
+        this.removeFromSelectedFileList( paraFile );
+        this.addFileToModuleWrapperEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public removeFromModuleFileList( paraFile ): void {
+        this.optionsPanelValueService.removeFromModuleFileData( paraFile );
+        this.removeFileFromModuleListEvent.emit();
+        this.ref.markForCheck();
+    }
+
+    public getModuleFileData(): any {
+        return this.optionsPanelValueService.getModuleFileData();
     }
 
     public showFileAndCommmitViews(): void {

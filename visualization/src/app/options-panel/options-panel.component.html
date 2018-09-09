@@ -24,9 +24,23 @@
     <div id="selected-files-holder">
       <div class="list-for-delete-panel"
            *ngFor="let file of getSelectedFileList()"
-           [style.color]="getFileColorByFileName(file)">
+           [style.color]="getFileColorByFileName(file)"
+           dnd-draggable [dragEnabled]="true" [dragData]="file">
               {{"..."+file.slice(-35)}}
               <fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa>
+      </div>
+    </div>
+  </div>
+  <hr/>
+  <div class="search-input-group">
+    <label>Wrap selected files to modules</label>
+    <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
+      <div [hidden]="getModuleFileData().length > 0">Files to Module Dropzone (Items: {{getModuleFileData().length}})</div>
+      <div class="list-for-module-panel"
+            *ngFor="let file of getModuleFileData()"
+            [style.color]="getFileColorByFileName(file)">
+            {{"..."+file.slice(-35)}}
+            <fa (click)="removeFromModuleFileList(file)" [name]="'times'"></fa>
       </div>
     </div>
   </div>

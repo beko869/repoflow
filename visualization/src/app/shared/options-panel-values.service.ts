@@ -10,6 +10,7 @@ export class OptionsPanelValuesService {
     private fileSelectValue: string;
     private fileRemoveValue: string;
     private commitQualityRemoveValue: string;
+    private moduleDataRemoveValue: string;
     private fileList: string[];
     private fileColorList: any;
     private selectedFileList: string[] = [];
@@ -18,6 +19,7 @@ export class OptionsPanelValuesService {
     private isFileInfo: boolean;
     private info: any;
     private qualityMetricList: string[];
+    private moduleFileData: string[] = [];
 
 
     public setIsFileInfo( paraValue: boolean ){
@@ -178,10 +180,28 @@ export class OptionsPanelValuesService {
     public removeFromSelectedCommitQualityList( paraValueToBeRemoved ): void {
         this.commitQualityRemoveValue = paraValueToBeRemoved;
 
-        for (var i=this.selectedCommitQualityList.length-1; i>=0; i--) {
+        for (let i=this.selectedCommitQualityList.length-1; i>=0; i--) {
             if (this.selectedCommitQualityList[i] === paraValueToBeRemoved) {
                 this.selectedCommitQualityList.splice(i, 1);
             }
         }
+    }
+
+    public removeFromModuleFileData( paraValueToBeRemoved ): void {
+        this.moduleDataRemoveValue = paraValueToBeRemoved;
+
+        for (let i=this.moduleFileData.length-1; i>=0; i--) {
+            if (this.moduleFileData[i] === paraValueToBeRemoved) {
+                this.moduleFileData.splice(i, 1);
+            }
+        }
+    }
+
+    public addFileToModuleFileData( paraFileValue ): void {
+        this.moduleFileData.push( paraFileValue );
+    }
+
+    public getModuleFileData(): any {
+        return this.moduleFileData;
     }
 }

@@ -38,6 +38,22 @@
     cursor:pointer;
 }
 
+.list-for-module-panel
+{
+    margin-top:2px;
+
+    background-color:#ddd;
+    color:darkslategray;
+    padding:3px;
+
+    font-size:14px;
+}
+
+.list-for-module-panel fa{
+    float:right;
+    cursor:pointer;
+}
+
 .active{
     color: #0e83cd !important;
     background: #fff !important;

@@ -89,7 +89,7 @@ router.get('/file_data_by_name/:filename', (req, res, next) => {
 /* GET file data by sha*/
 router.get('/file_data_by_sha/:sha/:quality_metric_key', (req, res, next) => {
     arangoDatabaseConnection
-        .query("FOR qm IN quality_metric FILTER qm.key=='lines_of_code' RETURN qm.file_types")
+        .query("FOR qm IN quality_metric FILTER qm.key=='" + req.params.quality_metric_key + "' RETURN qm.file_types")
         .then((fileTypeResult) => {
 
             let fileTypeArray = fileTypeResult._result[0];
@@ -163,7 +163,7 @@ router.get('/min_max_for_metric/:metric', (req, res, next) => {
 
 router.get('/file_data_by_quality_metric_key/:metric', (req, res, next) => {
     arangoDatabaseConnection
-        .query("FOR qm IN quality_metric FILTER qm.key=='lines_of_code' RETURN qm.file_types")
+        .query("FOR qm IN quality_metric FILTER qm.key=='" + req.params.metric + "' RETURN qm.file_types")
         .then((fileTypeResult) => {
             let fileTypesArray = fileTypeResult._result[0];
             return arangoDatabaseConnection
@@ -176,6 +176,91 @@ router.get('/file_data_by_quality_metric_key/:metric', (req, res, next) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.send(JSON.stringify({
                     "matched_file_names": matchedFileNamesArray
+                }
+            ));
+        });
+});
+
+
+/* GET file data by name*/
+router.get('/module_data/:filenames/:metric_key', (req, res, next) => {
+
+    arangoDatabaseConnection
+        .query("FOR qm IN quality_metric FILTER qm.key=='" + req.params.metric_key + "' RETURN qm.file_types")
+        .then((fileTypeResult) => {
+
+            let fileTypeArray = fileTypeResult._result[0];
+            let fileNamesArray = decodeURIComponent( req.params.filenames ).split(",");
+            let fileNamesFilter = "";
+
+
+            for( let i = 0; i<fileNamesArray.length; i++ ){
+                fileNamesFilter = fileNamesFilter + "f.name=='" + fileNamesArray[i] + "' OR "
+            }
+
+            fileNamesFilter = fileNamesFilter.slice(0,-4);
+
+            console.log(fileNamesFilter);
+
+            return arangoDatabaseConnection.query("FOR c IN commit FOR f IN file FILTER (" + fileNamesFilter + ") AND f.commitId == c.id RETURN {f,c}") //TODO join auf die color tabelle?
+                .then((result) => {
+                    let matchArray = [];
+
+                    //check for filetype
+                    result._result.forEach( (entry)=>{
+                        for( let i = 0; i<fileTypeArray.length; i++ ){
+                            let fileTypeLength = fileTypeArray[i].length;
+                            let fileName = entry.f.name;
+
+                            if( fileName.substr( fileName.length - fileTypeLength ) == fileTypeArray[i] ){
+                                matchArray.push( entry );
+                            }
+                        }
+                    });
+
+                    let ignoreCommitArray = [];
+                    let aggregatedResult = [];
+
+                    for( let i = 0; matchArray.length>i; i++ ){
+                        let currentCommitKey = matchArray[i].c._key;
+                        if( !ignoreCommitArray.includes( currentCommitKey ) ) {
+                            let howOftenFound = 0;
+                            let sumedQualityValue = 0;
+                            let fileNames = "";
+
+                            for (let j = 0; matchArray.length > j; j++) {
+                                let tmpCommitKey = matchArray[j].c._key;
+
+                                if (currentCommitKey == tmpCommitKey) {
+                                    howOftenFound++;
+
+                                    console.log(matchArray[j].f[req.params.metric_key]);
+                                    console.log(howOftenFound);
+                                    sumedQualityValue = parseFloat( sumedQualityValue + matchArray[j].f[req.params.metric_key] );
+                                    fileNames =  fileNames + matchArray[j].f.name + ",";
+                                }
+                            }
+
+                            ignoreCommitArray.push(currentCommitKey);
+
+                            //Durchschnitt
+                            matchArray[i].f[req.params.metric_key] = parseFloat( sumedQualityValue/howOftenFound );
+                            matchArray[i].f.name = fileNames;
+
+                            aggregatedResult.push( matchArray[i] );
+                        }
+                    }
+
+
+                    return aggregatedResult;
+                });
+        })
+        .then((matchedFileNamesArray) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.send(JSON.stringify(
+                {
+                    "files": matchedFileNamesArray
                 }
             ));
         });

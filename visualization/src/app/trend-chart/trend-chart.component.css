@@ -41,7 +41,17 @@ app-diff-panel {
     stroke-width: 2px;
     fill: #fff;
     clip-path: stroke-box;
+}
 
+.module-view-node {
+    cursor:pointer;
+    stroke-width: 2px;
+    fill: #fff;
+    clip-path: stroke-box;
+}
+
+.module-view-link {
+    stroke-dasharray: 3,3;
 }
 
 .commit-view-node {

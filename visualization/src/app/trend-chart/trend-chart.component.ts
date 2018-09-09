@@ -118,6 +118,21 @@ export class TrendChartComponent implements OnInit {
 
 
     /**
+     * renders the file view with the given data array
+     * @param paraData array containing files data
+     */
+    public renderModuleTrendView(): void {
+        this.clearModuleView();
+
+        this.apiService.getModuleFileData( this.optionsPanelValueService.getModuleFileData().join(), this.optionsPanelValueService.getQualityMetricSelectValue() )
+            .subscribe( (data)=>{
+                this.renderModuleViewNodes( data.files );
+                this.renderModuleViewLinks( data.files );
+            });
+
+    }
+
+    /**
      * clears the view from all elements containing commit classes
      */
     public clearCommitView( paraCommitQuality:string = null ): void {
@@ -152,6 +167,16 @@ export class TrendChartComponent implements OnInit {
             d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("")).remove();
             d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("")).remove();
         }
+    }
+
+
+    /**
+     * clears the view from all elements containing file classes
+     */
+    public clearModuleView(): void {
+        d3Selection.selectAll('.module-view-node').remove();
+        d3Selection.selectAll('.module-view-link').remove();
+
     }
 
     /**
@@ -309,8 +334,7 @@ export class TrendChartComponent implements OnInit {
             return this.yScale( this.getNormalizedValue( d[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
         })
         .attr('fill', '#ff7f00')
-        .attr('r', (d)=>{ return d.fileCount*2 })
-        .attr('fill', '#ff7f00')
+        .attr('r', (d)=>{ return 15/*d.fileCount*2*/ })
         .on('click',(d)=>{
             this.renderFilesOfCommit( d.id );
         })
@@ -343,7 +367,7 @@ export class TrendChartComponent implements OnInit {
         this.trendVisualizationWrapper.append("g")
             .attr("class","guide-line x")
             .append("line")
-            .attr('y1', this.yScale(paraY) ).attr('y2', this.yScale(paraY) )
+            .attr('y1', ( paraY > 0 ? this.yScale(paraY) : 0 ) ).attr('y2', ( paraY > 0 ? this.yScale(paraY) : 0 ) )
             .attr("x1", 0 ).attr("x2", currentXScale( paraX ) )
             .attr("stroke-width", 1)
             .attr("stroke", "gray");
@@ -360,7 +384,7 @@ export class TrendChartComponent implements OnInit {
         this.trendVisualizationWrapper.append("g")
             .attr("class","guide-line x")
             .append("line")
-            .attr('y1', this.yScale(paraY) ).attr('y2', this.height )
+            .attr('y1', ( paraY > 0 ? this.yScale( paraY ) : 0 ) ).attr( 'y2', this.height )
             .attr("x1", currentXScale( paraX ) ).attr("x2", currentXScale( paraX ) )
             .attr("stroke-width", 1)
             .attr("stroke", "gray");
@@ -531,6 +555,131 @@ export class TrendChartComponent implements OnInit {
             .attr("d", line)
             .attr("clip-path","url(#clipper)");
     }
+
+
+    /**
+     * renders the commit nodes retrieved from the backend
+     */
+    public renderModuleViewNodes( paraFileNodesData: any ): void {
+        let currentXScale = this.getCurrentXScale();
+        let that = this;
+
+        //add main dot to fileview nodes
+        let currentNode = this.trendVisualizationWrapper.append('g').selectAll('rect')
+            .data(paraFileNodesData)
+            .enter()
+            .append('circle')
+            .attr('class', (d)=>{ return 'module-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
+            .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+            .attr('cy', (d)=>{
+                let qualityValue = 0;
+                if( d.f.status != 'deleted' ){
+                    qualityValue = this.getNormalizedValue( d.f[ this.optionsPanelValueService.getQualityMetricSelectValue()] );
+                }
+                return this.yScale( qualityValue );
+
+            })
+            .attr('stroke', (d)=>{ return 'red' })
+            .attr('r', 10);
+
+        currentNode.on("click", function(d) {
+            if( that.diffPanel.getLeftFileFixated() ) {
+                that.diffPanelValueService.setRightContent( d.f.fileContent )
+                that.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
+
+                d3Selection.select('.right-fixated-file-node')
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
+                    .attr('r',10)
+                    .attr('stroke','red' );
+
+                d3Selection.select(this)
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node')
+                    .attr('r',15)
+                    .attr('stroke','red');
+            }
+            else {
+                that.diffPanelValueService.setLeftContent( d.f.fileContent )
+                that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
+
+                d3Selection.select('.left-fixated-file-node')
+                    .attr('r',10)
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
+                    .attr('stroke','red' );
+
+                d3Selection.select(this)
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node')
+                    .attr('r',15)
+                    .attr('stroke','red');
+
+            }
+
+            //this.showFileDetailView( d.f.fileContent );
+        })
+            .on("mouseover", (d) => {
+                this.optionsPanelValueService.setInfo( {
+                    "filename":d.f.name,
+                    "value": d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
+                    "sha":d.f.commitId,
+                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                } );
+                this.optionsPanel.ref.markForCheck();
+
+                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+
+            })
+            .on("mouseout", ()=>{
+                this.removeDashedGuideLines();
+            });
+    }
+
+
+    /**
+     * renders links based on the files paths through commits
+     * @param paraFileLinksData file path data as array from the backend
+     */
+    public renderModuleViewLinks( paraFileLinksData: any ): void {
+        let currentXScale = this.getCurrentXScale();
+
+        //d3 line generator
+        const line = d3Shape.line()
+            .x((d)=>{ return currentXScale( d[ 'x' ] ) })
+            .y((d)=>{ return this.yScale( d[ 'y' ] ) })
+            .curve(d3Shape.curveMonotoneX);
+
+        let fileLinkArray = [];
+        let dateCompare = this.utility.fileDatetimeComparer;
+        let filesSortyByCommitDatetime = paraFileLinksData.sort( dateCompare );
+
+        filesSortyByCommitDatetime.forEach( (file)=>{
+            let qualityValue = 0;
+            if( file.f.status != 'deleted' ){
+                qualityValue = this.getNormalizedValue( file.f[ this.optionsPanelValueService.getQualityMetricSelectValue()] );
+            }
+
+            fileLinkArray.push({
+                "x": new Date(file.c.datetime),
+                "y": qualityValue,
+                "color": file.f.color,
+                "name": file.f.name
+            });
+        });
+
+        this.trendVisualizationWrapper
+            .append('path')
+            .datum(fileLinkArray)
+            .attr('class', (d)=>{ return 'module-view-link ' + d[0].name.split("/").join("").split(".").join("") } )
+            .attr("fill", "none")
+            .attr("stroke", (d)=>{
+                return 'red';
+            })
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-linecap", "round")
+            .attr("stroke-width", 3)
+            .attr("d", line)
+            .attr("clip-path","url(#clipper)");
+    }
+
 
     /**
      * clears the view from all elements containing commit classes

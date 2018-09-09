@@ -5,7 +5,8 @@ import { Angular2FontawesomeModule } from 'angular2-fontawesome';
 import { CodemirrorModule } from 'ng2-codemirror';
 import { FormsModule } from '@angular/forms';
 import { Select2Module } from "ng2-select2";
-import { HttpModule } from "@angular/http";
+import { HttpClientModule } from "@angular/common/http";
+import { DndModule } from "ng2-dnd";
 
 import { AppComponent } from './app.component';
 import { OptionsPanelComponent } from './options-panel/options-panel.component';
@@ -31,11 +32,12 @@ import { ApiService } from "./shared/api.service";
   ],
   imports: [
     BrowserModule,
-    HttpModule,
+    HttpClientModule,
     Angular2FontawesomeModule,
     CodemirrorModule,
     FormsModule,
     Select2Module,
+    DndModule.forRoot(),
     RouterModule.forRoot([
         {
           path: 'trend',
