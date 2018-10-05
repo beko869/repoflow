@@ -1,5 +1,5 @@
 .filter-area {
-    padding:8px;
+    padding:8px 8px 0 8px;
 }
 
 .search-input-group
@@ -69,4 +69,12 @@
 .info-value{
     font-size:12px;
     font-style:normal;
+}
+
+legend{
+    border-radius:2px;
+    background-color:gray;
+
+    color:white;
+    padding:3px;
 }

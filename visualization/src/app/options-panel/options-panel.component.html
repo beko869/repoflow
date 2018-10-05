@@ -1,4 +1,5 @@
 <div class="filter-area">
+  <legend style="text-align:center;margin-top:10px;">Select quality metric and files</legend>
   <div class="search-input-group">
     <label>Set quality metric</label>
     <select2 [data]="getQualityMetricListForSelect()"
@@ -31,11 +32,11 @@
       </div>
     </div>
   </div>
-  <hr/>
+
+  <legend style="text-align:center;margin-top:30px;">Wrap selected files to modules</legend>
   <div class="search-input-group">
-    <label>Wrap selected files to modules</label>
     <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
-      <div [hidden]="getModuleFileData().length > 0">Files to Module Dropzone (Items: {{getModuleFileData().length}})</div>
+      <div class="module-file-dropzone" [hidden]="getModuleFileData().length > 0"><i>Drop files that you want to wrap in a module here!</i></div>
       <div class="list-for-module-panel"
             *ngFor="let file of getModuleFileData()"
             [style.color]="getFileColorByFileName(file)">
@@ -50,47 +51,34 @@
       <option>test</option>
     </select>
   </div>-->
+  <app-diff-panel #diffPanel></app-diff-panel>
 
-  <hr/>
+  <legend style="text-align:center;margin-top:30px;">Compare commit trends</legend>
   <div class="search-input-group">
-    <label>Customize View</label>
-    <div class="button" (click)="showCommitView()">Show Commit View</div>
-    <div class="button" (click)="showFileView()">Show File View</div>
-    <div class="button" (click)="showFileAndCommmitViews()">Show All Views</div>
+    <label>Set quality metric</label>
+    <select2 [data]="getQualityMetricListForSelect()"
+             [options]="getSelectLayoutOptions()"
+             (valueChanged)="setFirstQualityMetricSelectValueForCompare( $event.value )">
+    </select2>
+    <label>Set quality metric</label>
+    <select2 [data]="getQualityMetricListForSelect()"
+             [options]="getSelectLayoutOptions()"
+             (valueChanged)="setSecondQualityMetricSelectValueForCompare( $event.value )">
+    </select2>
+  </div>
+
+  <legend style="text-align:center;margin-top:30px;">Customize View</legend>
+  <div class="search-input-group">
+    <div class="button" (click)="showCommitView()">Show all commits</div>
+    <div class="button" (click)="showFileView()">Show all files</div>
+    <div class="button" (click)="showFileAndCommmitViews()">Show commits and files</div>
     <div></div>
-    <div class="button" (click)="fadeFileView()">Fade Files</div>
-    <div class="button" (click)="fadeCommitView()">Fade Commits</div>
+    <div class="button" (click)="fadeFileView()">Fade files</div>
+    <div class="button" (click)="fadeCommitView()">Fade commits</div>
+    <div class="button" (click)="clearCommmitView()">Clear commits</div>
   </div>
   <!--<div class="search-input-group">
     <div class="button" (click)="showFileDetailView()">Show File Details</div>
   </div>-->
-  <hr/>
-  <div class="search-input-group">
-    <label>Commit/File Info</label>
-    <div *ngIf="getInfo() != undefined; else infoBlockPlaceholder">
-      <div *ngIf="getInfo().filename != undefined; else commitInfoBlock" class="info-holder">
-        <label class="info-label">Filename</label>
-        <div class="info-value">{{getInfo().filename}}</div>
-        <label class="info-label">Value</label>
-        <div class="info-value">{{getInfo().value}}</div>
-        <label class="info-label">Commit SHA</label>
-        <div class="info-value">{{getInfo().sha}}</div>
-        <label class="info-label">Time</label>
-        <div class="info-value">{{getInfo().time}}</div>
-      </div>
-      <ng-template #commitInfoBlock>
-        <label class="info-label">Filecount</label>
-        <div class="info-value">{{getInfo().filecount}}</div>
-        <label class="info-label">Value</label>
-        <div class="info-value">{{getInfo().value}}</div>
-        <label class="info-label">Commit SHA</label>
-        <div class="info-value">{{getInfo().sha}}</div>
-        <label class="info-label">Time</label>
-        <div class="info-value">{{getInfo().time}}</div>
-    </ng-template>
-    </div>
-    <ng-template #infoBlockPlaceholder>
-      <span style="font-size:12px;font-style:italic">Hover over Commits/Files to see Information</span>
-    </ng-template>
-  </div>
 </div>
+

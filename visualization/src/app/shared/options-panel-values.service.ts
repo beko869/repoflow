@@ -15,6 +15,7 @@ export class OptionsPanelValuesService {
     private fileColorList: any;
     private selectedFileList: string[] = [];
     private selectedCommitQualityList: string[] = [];
+    private qualityMetricSelectValueForCompare: string[] = [];
     private qualityMetricSelectValue: string;
     private isFileInfo: boolean;
     private info: any;
@@ -53,6 +54,13 @@ export class OptionsPanelValuesService {
         this.selectedCommitQualityList.push( paraValue );
     }
 
+    public setFirstQualityMetricSelectValueForCompare( paraValue: string ){
+        this.qualityMetricSelectValueForCompare[0] = paraValue;
+    }
+
+    public setSecondQualityMetricSelectValueForCompare( paraValue: string ){
+        this.qualityMetricSelectValueForCompare[1] = paraValue;
+    }
 
     /**
      * gets the selected file value from the options panel component file dropdown
@@ -133,6 +141,11 @@ export class OptionsPanelValuesService {
      */
     public getQualityMetricListForSelect(): any {
         return this.qualityMetricList;
+    }
+
+
+    public getCommitQualityCompareValues() : any{
+        return this.qualityMetricSelectValueForCompare;
     }
 
     /**

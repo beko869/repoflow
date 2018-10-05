@@ -29,9 +29,9 @@ export class ApiService {
      * get call for commit data
      * @returns {Observable<any>}
      */
-    public getCommitData() {
+    public getCommitData( paraMetric ) {
         return this.http
-            .get(API_URL + 'get/commit_data')
+            .get(API_URL + 'get/commit_data' + ( paraMetric ? '?metric='+paraMetric : '' ) )
             .catch(this.handleError);
     }
 

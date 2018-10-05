@@ -1,7 +1,8 @@
 import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter,
-    Output
+    Output, ViewChild
 } from '@angular/core';
+import { trigger, transition, animate, style } from '@angular/animations';
 
 import {OptionsPanelValuesService} from "../shared/options-panel-values.service";
 
@@ -9,7 +10,18 @@ import {OptionsPanelValuesService} from "../shared/options-panel-values.service"
     selector: 'app-options-panel',
     templateUrl: './options-panel.component.html',
     styleUrls: ['./options-panel.component.css'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [
+        trigger('slideInOut', [
+            transition(':enter', [
+                style({transform: 'translateY(-100%)'}),
+                animate('500ms ease-in', style({transform: 'translateY(0%)'}))
+            ]),
+            transition(':leave', [
+                animate('500ms ease-in', style({transform: 'translateY(-100%)'}))
+            ])
+        ])
+    ]
 })
 
 export class OptionsPanelComponent {
@@ -17,6 +29,7 @@ export class OptionsPanelComponent {
     @Output() switchViewEvent = new EventEmitter<number>();
     @Output() addFileToVisualizationEvent = new EventEmitter<string>();
     @Output() qualityMetricChangedEvent = new EventEmitter<string>();
+    @Output() qualityMetricCompareChangedEvent = new EventEmitter<string>();
     @Output() removeFileFromVisualizationEvent = new EventEmitter<string>();
     @Output() removeCommitQualityFromVisualizationEvent = new EventEmitter<string>();
     @Output() clearFileViewEvent = new EventEmitter<string>();
@@ -32,10 +45,15 @@ export class OptionsPanelComponent {
     @Output() removeFileFromModuleListEvent = new EventEmitter<string>();
     private selectOptions: any;
 
+    @ViewChild('diffPanel') diffPanel;
+
     constructor(private optionsPanelValueService:OptionsPanelValuesService, private ref:ChangeDetectorRef ) {
         this.selectOptions = {"width":"100%"}
     }
 
+    public getDiffPanel(): any {
+        return this.diffPanel;
+    }
 
     /**
      * sets the file list for the file list select from the options panel value service
@@ -89,7 +107,7 @@ export class OptionsPanelComponent {
      * @returns {string[]}
      */
     public getFileListForSelect(): any {
-        return this.optionsPanelValueService.getFileList();;
+        return this.optionsPanelValueService.getFileList();
     }
 
     /**
@@ -150,6 +168,22 @@ export class OptionsPanelComponent {
         }
     }
 
+    public setFirstQualityMetricSelectValueForCompare( paraValue: string ): void {
+        if( paraValue != '0' ) {
+            this.optionsPanelValueService.setFirstQualityMetricSelectValueForCompare( paraValue );
+            this.qualityMetricCompareChangedEvent.emit();
+            this.ref.markForCheck();
+        }
+    }
+
+    public setSecondQualityMetricSelectValueForCompare( paraValue: string ): void {
+        if( paraValue != '0' ) {
+            this.optionsPanelValueService.setSecondQualityMetricSelectValueForCompare( paraValue );
+            this.qualityMetricCompareChangedEvent.emit();
+            this.ref.markForCheck();
+        }
+    }
+
     public getSelectLayoutOptions(){
         return this.selectOptions;
     }
@@ -184,6 +218,7 @@ export class OptionsPanelComponent {
 
     public removeFromModuleFileList( paraFile ): void {
         this.optionsPanelValueService.removeFromModuleFileData( paraFile );
+        this.optionsPanelValueService.setFileSelectValue( paraFile );
         this.removeFileFromModuleListEvent.emit();
         this.ref.markForCheck();
     }

@@ -19,6 +19,7 @@ import { DiffPanelComponent } from './diff-panel/diff-panel.component';
 import { DiffPanelValuesService } from "./shared/diff-panel-values.service";
 import { ModalDialogComponent } from './modal-dialog/modal-dialog.component';
 import { ApiService } from "./shared/api.service";
+import { StatsPanelComponent } from './stats-panel/stats-panel.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,8 @@ import { ApiService } from "./shared/api.service";
     LegendComponent,
     CodeEditorComponent,
     DiffPanelComponent,
-    ModalDialogComponent
+    ModalDialogComponent,
+    StatsPanelComponent
   ],
   imports: [
     BrowserModule,

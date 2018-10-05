@@ -1,0 +1,47 @@
+<div class="stats-holder">
+  <div *ngIf="getInfo() != undefined; else infoBlockPlaceholder">
+    <div *ngIf="getInfo().filename != undefined; else commitInfoBlock" class="stats-holder-flex-container">
+      <div>
+        <label class="info-label">Filename</label>
+        <div class="info-value">{{getInfo().filename}}</div>
+      </div>
+      <div>
+        <label class="info-label">Value</label>
+        <div class="info-value">{{getInfo().value}}</div>
+      </div>
+      <div>
+        <label class="info-label">Commit SHA</label>
+        <div class="info-value">{{getInfo().sha}}</div>
+      </div>
+      <div>
+        <label class="info-label">Time</label>
+        <div class="info-value">{{getInfo().time}}</div>
+      </div>
+    </div>
+    <ng-template #commitInfoBlock>
+      <div class="stats-holder-flex-container">
+        <div>
+          <label class="info-label">Filecount</label>
+          <div class="info-value">{{getInfo().filecount}}</div>
+        </div>
+        <div>
+          <label class="info-label">Value</label>
+          <div class="info-value">{{getInfo().value}}</div>
+        </div>
+        <div>
+          <label class="info-label">Commit SHA</label>
+          <div class="info-value">{{getInfo().sha}}</div>
+        </div>
+        <div>
+          <label class="info-label">Time</label>
+          <div class="info-value">{{getInfo().time}}</div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+  <ng-template #infoBlockPlaceholder>
+    <label>Commit/File Info</label>
+    <div style="font-size:12px;font-style:italic">Hover over Commits/Files to see Information</div>
+  </ng-template>
+</div>
+<hr/>

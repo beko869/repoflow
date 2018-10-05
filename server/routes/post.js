@@ -22,7 +22,7 @@ router.put('/database', (req, res, next)=>{
     helper.truncateDatabase()
         .then( (success) => {
             if( success ){
-                nodegitKit.open( req.body.repo_directory )
+                return nodegitKit.open( req.body.repo_directory )
                     .then((repo)=>{
                         return nodegitKit.log(repo, { sort: 'reverse' })
                             .then((history)=>{
@@ -83,7 +83,7 @@ router.put('/database', (req, res, next)=>{
                                         "RETURN NEW",
                                         {   sha: commitDataArray[i].commit.commit_sha,
                                             message: commitDataArray[i].commit.message,
-                                            color: "blue",
+                                            color: colorScheme[i%800],
                                             datetime: commitDataArray[i].commit.date,
                                             quality_metric_1: Math.random(),
                                             quality_metric_2: Math.random(),
@@ -250,6 +250,8 @@ router.put('/quality', (req,res,next)=>{
     //DEMONSTRATION
     if( req.body.compute_js_metrics == 1 )
     {
+        console.log
+
         //Demonstration mit JSHint
         helper.selectSHAFileArray()
             .then( ( shaFileArray ) => {

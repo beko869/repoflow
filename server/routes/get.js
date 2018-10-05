@@ -59,15 +59,33 @@ router.get('/initial_data', (req, res, next) => {
 
 /* GET commit data */
 router.get('/commit_data', (req, res, next) => {
-    arangoDatabaseConnection.query("FOR c IN commit RETURN c")
-        .then((values) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.send(JSON.stringify(
-                {
-                    "commit-nodes": values._result
-                }
-            ));
+    arangoDatabaseConnection
+        .query("FOR c IN commit RETURN c")
+        .then((commitValues) => {
+            if( req.query.metric != '' && req.query.metric != undefined && req.query.metric != null ) {
+                arangoDatabaseConnection.query("FOR f IN file COLLECT AGGREGATE min = MIN( f." + req.query.metric + " ), max = MAX( f." + req.query.metric + " ) RETURN { min, max }")
+                    .then((minMaxValues) => {
+                        console.log(minMaxValues);
+
+                        res.setHeader('Content-Type', 'application/json');
+                        res.setHeader('Access-Control-Allow-Origin', '*');
+                        res.send(JSON.stringify({
+                                "min_max_values": minMaxValues._result,
+                                "commit-nodes":commitValues._result
+                            }
+                        ));
+                    });
+            }
+            else
+            {
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.send(JSON.stringify(
+                    {
+                        "commit-nodes": commitValues._result
+                    }
+                ));
+            }
         });
 });
 

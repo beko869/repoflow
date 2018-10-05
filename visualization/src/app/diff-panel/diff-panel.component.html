@@ -1,23 +1,24 @@
-<div class="diff-panel-holder">
+<legend style="text-align:center;margin-top:30px;">Compare Files</legend>
 
+<div class="diff-panel-holder">
     <div class="file-info-holder">
-        <label class="info-label">Filename</label>
-        <div class="info-value">{{getLeftFileData().fileName}}</div>
+        <label class="info-label" style="color:darkcyan">First File</label>
+        <div class="info-value" style="color:darkcyan">{{getLeftFileData().fileName}}</div>
         <label class="info-label">SHA</label>
         <div class="info-value">{{getLeftFileData().sha}}</div>
         <div class="button" (click)="toggleLeftFileFixated()">
             <span *ngIf="getLeftFileFixated() && getLeftFileData().fileName != 'N/A'; else leftFileFixated" >
-                Change file revision
+                Change revision of first file
             </span>
             <ng-template #leftFileFixated>
-                Fixate file revision
+                Fixate revision of first file
             </ng-template>
         </div>
     </div>
 
-    <div class="file-info-holder">
-        <label class="info-label">Filename</label>
-        <div class="info-value">{{getRightFileData().fileName}}</div>
+    <div *ngIf="getLeftFileFixated() && getLeftFileData().fileName != 'N/A'" class="file-info-holder">
+        <label class="info-label" style="color:darkorchid">Second File</label>
+        <div class="info-value" style="color:darkorchid">{{getRightFileData().fileName}}</div>
         <label class="info-label">SHA</label>
         <div class="info-value">{{getRightFileData().sha}}</div>
         <div class="button" (click)="modal.show();codeEditor.setLeftContent();codeEditor.setRightContent()">

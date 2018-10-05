@@ -13,7 +13,9 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
 
         let qualityKeyNameArray = [
                                     {'key':'complexity','label':'Cyclomatic Complexity','file_types':['.js']},
-                                    {'key':'lines_of_code','label':'Lines of Code','file_types':['.js']}
+                                    {'key':'lines_of_code','label':'Lines of Code','file_types':['.js']},
+                                    {'key':'parameters','label':'Parameters','file_types':['.js']},
+                                    {'key':'statements','label':'Statements','file_types':['.js']}
                                   ];
 
         let qualityKeyValueArray = [];
@@ -26,10 +28,14 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                     jshint.JSHINT(fileArray[i].fileContent.split('\n'), {undef: true, esversion: 6}, {foo: false});
                     let qualityData = jshint.JSHINT.data();
                     let cyclomaticComplexity = 0;
+                    let parameters = 0;
+                    let statements = 0;
 
                     if (qualityData.functions.length > 0) {
                         for (let j = 0; j < qualityData.functions.length; j++) {
                             cyclomaticComplexity = cyclomaticComplexity + qualityData.functions[j].metrics.complexity;
+                            parameters = parameters + qualityData.functions[j].metrics.parameters;
+                            statements = statements + qualityData.functions[j].metrics.statements;
                         }
                     }
 
@@ -37,7 +43,9 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                             '_key': fileArray[i]._key,
                             'commitId': fileArray[i].commitId,
                             'complexity': cyclomaticComplexity,
-                            'lines_of_code': sloc(fileArray[i].fileContent, 'js').total
+                            'lines_of_code': sloc(fileArray[i].fileContent, 'js').total,
+                            'parameters': parameters,
+                            'statements' : statements
                         }
                     );
                 }

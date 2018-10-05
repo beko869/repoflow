@@ -1,13 +1,12 @@
 .diff-panel-holder{
     display:flex;
+    flex-direction:column;
 
-    justify-content:flex-start;
-    align-items:flex-end;
-    padding-left:20px;
+    padding:0 8px 0 0;
 }
 
 .file-info-holder{
-    flex-basis:300px;
+    flex-basis:20%;
 }
 
 .info-label{
@@ -18,4 +17,16 @@
 .info-value{
     font-size:12px;
     font-style:normal;
+}
+
+label {
+    font-style:italic;
+}
+
+legend{
+    border-radius:2px;
+    background-color:gray;
+
+    color:white;
+    padding:3px;
 }

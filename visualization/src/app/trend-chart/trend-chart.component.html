@@ -1,24 +1,27 @@
 <div class="horizontal-flex-wrapper">
-  <app-options-panel #optionsPanel
-          (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
-          (addFileToVisualizationEvent)="addFileToVisualization()"
-          (qualityMetricChangedEvent)="qualityMetricChanged()"
-          (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
-          (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
-          (clearFileViewEvent)="clearFileView()"
-          (clearCommitViewEvent)="clearCommitView()"
-          (clearFileDetailViewEvent)="clearFileDetailView()"
-          (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
-          (fadeFileViewEvent)="fadeFileViewToBackground();fadeCommitViewToForeGround()"
-          (fadeCommitViewEvent)="fadeCommitViewToBackground();fadeFileViewToForeground()"
-          (showFileAndCommitViewsEvent)="addCommitQualityListToVisualization();addFileListToVisualization();"
-          (addFileToModuleWrapperEvent)="renderModuleTrendView()"
-          (removeFileFromModuleListEvent)="renderModuleTrendView()"
-  >
-  </app-options-panel>
+  <div class="vertical-flex-wrapper" id="left-options" style="border-right:dashed 1px black">
+    <app-options-panel #optionsPanel
+            (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
+            (addFileToVisualizationEvent)="addFileToVisualization()"
+            (qualityMetricChangedEvent)="qualityMetricChanged()"
+            (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
+            (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
+            (clearFileViewEvent)="clearFileView()"
+            (clearCommitViewEvent)="clearCommitView()"
+            (clearFileDetailViewEvent)="clearFileDetailView()"
+            (addSelectedFileListToVisualizationEvent)="addFileListToVisualization()"
+            (fadeFileViewEvent)="fadeFileViewToBackground();fadeCommitViewToForeGround()"
+            (fadeCommitViewEvent)="fadeCommitViewToBackground();fadeFileViewToForeground()"
+            (showFileAndCommitViewsEvent)="addCommitQualityListToVisualization();addFileListToVisualization();"
+            (addFileToModuleWrapperEvent)="renderModuleTrendView()"
+            (removeFileFromModuleListEvent)="renderModuleTrendView();addFileListToVisualization()"
+            (qualityMetricCompareChangedEvent)="addCommitCompareQualityListToVisualization()"
+    >
+    </app-options-panel>
+  </div>
   <div class="vertical-flex-wrapper">
-    <app-diff-panel #diffPanel></app-diff-panel>
-    <div id="trend-chart">
+    <app-stats-panel></app-stats-panel>
+    <div id="trend-chart" #trendContainer>
       <!--trend chart gets rendered here-->
     </div>
     <app-legend></app-legend>
