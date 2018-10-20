@@ -54,12 +54,8 @@ export class OptionsPanelValuesService {
         this.selectedCommitQualityList.push( paraValue );
     }
 
-    public setFirstQualityMetricSelectValueForCompare( paraValue: string ){
-        this.qualityMetricSelectValueForCompare[0] = paraValue;
-    }
-
-    public setSecondQualityMetricSelectValueForCompare( paraValue: string ){
-        this.qualityMetricSelectValueForCompare[1] = paraValue;
+    public setQualityMetricSelectValueForCompare( paraValue: string ){
+        this.qualityMetricSelectValueForCompare.push( paraValue );
     }
 
     /**
@@ -190,12 +186,12 @@ export class OptionsPanelValuesService {
         }
     }
 
-    public removeFromSelectedCommitQualityList( paraValueToBeRemoved ): void {
+    public removeFromCommitQualityForCompareList( paraValueToBeRemoved ): void {
         this.commitQualityRemoveValue = paraValueToBeRemoved;
 
-        for (let i=this.selectedCommitQualityList.length-1; i>=0; i--) {
-            if (this.selectedCommitQualityList[i] === paraValueToBeRemoved) {
-                this.selectedCommitQualityList.splice(i, 1);
+        for (let i=this.qualityMetricSelectValueForCompare.length-1; i>=0; i--) {
+            if (this.qualityMetricSelectValueForCompare[i] === paraValueToBeRemoved) {
+                this.qualityMetricSelectValueForCompare.splice(i, 1);
             }
         }
     }
@@ -216,5 +212,16 @@ export class OptionsPanelValuesService {
 
     public getModuleFileData(): any {
         return this.moduleFileData;
+    }
+
+    public lookupQualityNameForKey( paraKey ): string {
+        let qualityName = "";
+        for( let i = 0; i<this.qualityMetricList.length; i++ ) {
+            if( this.qualityMetricList[i]['id'] == paraKey ) {
+                qualityName = this.qualityMetricList[i]['text'];
+            }
+        }
+
+        return qualityName;
     }
 }

@@ -1,5 +1,19 @@
-<legend style="text-align:center;margin-top:30px;">Compare Files</legend>
-
+<legend style="text-align:center;margin-top:30px;">
+    Compare Files
+    <fa (click)="compareFilesHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
+</legend>
+<app-modal-dialog class="help-modal" #compareFilesHelpModal>
+    <div class="app-modal-header">
+        Help for comparing file versions with each other
+    </div>
+    <div class="app-modal-body">
+        If you are visualizing files, you can compare two versions for their differences.<br/>
+        First click on one file node in the visualization and then click on 'Fixate revision for first file'. Selecting another file node and clicking 'Show File Difference View' opens a Diff Viewer.
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="compareFilesHelpModal.hide()">Close</button>
+    </div>
+</app-modal-dialog>
 <div class="diff-panel-holder">
     <div class="file-info-holder">
         <label class="info-label" style="color:darkcyan">First File</label>

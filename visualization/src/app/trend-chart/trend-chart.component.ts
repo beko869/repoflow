@@ -354,7 +354,7 @@ export class TrendChartComponent implements OnInit {
             let qualityValue = this.getNormalizedValue( d[paraQualityMetric] );
 
             this.optionsPanelValueService.setInfo({
-                "value": d[paraQualityMetric] + " " + paraQualityMetric,
+                "value": d[paraQualityMetric] + " " + this.optionsPanelValueService.lookupQualityNameForKey( paraQualityMetric ),
                 "sha": d.id,
                 "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
                 "filecount": d.fileCount
@@ -373,7 +373,7 @@ export class TrendChartComponent implements OnInit {
      * @param paraX x coordinates non scaled but in right domain
      * @param paraY y coordinates non scaled but in right domain
      */
-    public renderDashedGuideLineToXAxis( paraX, paraY ){
+    public renderDashedGuideLineToXAxis( paraX, paraY, paraNormMin = null, paraNormQuot = null ){
         let currentXScale = this.getCurrentXScale();
 
         this.trendVisualizationWrapper.append("g")
@@ -788,6 +788,7 @@ export class TrendChartComponent implements OnInit {
 
     public addCommitCompareQualityListToVisualization(): void {
         let qualities = this.optionsPanelValueService.getCommitQualityCompareValues();
+        this.clearCommitView();
 
         for( let i=0; i<qualities.length; i++ ){
 

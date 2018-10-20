@@ -78,3 +78,7 @@ legend{
     color:white;
     padding:3px;
 }
+
+.pointer-cursor {
+    cursor: pointer;
+}

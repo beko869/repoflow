@@ -130,6 +130,10 @@ export class OptionsPanelComponent {
         return this.optionsPanelValueService.getSelectedCommitQualityList();
     }
 
+    public getCommitQualityCompareList(): string[] {
+        return this.optionsPanelValueService.getCommitQualityCompareValues();
+    }
+
     /**
      * removes a value from the selected list with the optionspanelvalueservice, emits a removeFileFromVisualizationEvent and marks the optionspanel component for refresh
      * @param {string} paraValueToBeRemoved
@@ -140,11 +144,11 @@ export class OptionsPanelComponent {
         this.ref.markForCheck();
     }
 
-    /*public removeFromSelectedCommitQualityList( paraValueToBeRemoved:string ): void {
-        this.optionsPanelValueService.removeFromSelectedCommitQualityList( paraValueToBeRemoved );
-        this.removeCommitQualityFromVisualizationEvent.emit();
+    public removeFromSelectedCommitQualityList( paraValueToBeRemoved:string ): void {
+        this.optionsPanelValueService.removeFromCommitQualityForCompareList( paraValueToBeRemoved );
+        this.qualityMetricCompareChangedEvent.emit();
         this.ref.markForCheck();
-    }*/
+    }
 
 
     /**
@@ -168,20 +172,16 @@ export class OptionsPanelComponent {
         }
     }
 
-    public setFirstQualityMetricSelectValueForCompare( paraValue: string ): void {
+    public setQualityMetricSelectValueForCompare( paraValue: string ): void {
         if( paraValue != '0' ) {
-            this.optionsPanelValueService.setFirstQualityMetricSelectValueForCompare( paraValue );
+            this.optionsPanelValueService.setQualityMetricSelectValueForCompare( paraValue );
             this.qualityMetricCompareChangedEvent.emit();
             this.ref.markForCheck();
         }
     }
 
-    public setSecondQualityMetricSelectValueForCompare( paraValue: string ): void {
-        if( paraValue != '0' ) {
-            this.optionsPanelValueService.setSecondQualityMetricSelectValueForCompare( paraValue );
-            this.qualityMetricCompareChangedEvent.emit();
-            this.ref.markForCheck();
-        }
+    public lookupQualityNameForKey( paraKey ): string {
+        return this.optionsPanelValueService.lookupQualityNameForKey( paraKey );
     }
 
     public getSelectLayoutOptions(){

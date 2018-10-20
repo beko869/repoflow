@@ -1,5 +1,21 @@
 <div class="filter-area">
-  <legend style="text-align:center;margin-top:10px;">Select quality metric and files</legend>
+  <legend style="text-align:center;margin-top:10px;">
+    Select quality metric and files
+    <fa (click)="qualityMetricAndFilesHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
+  </legend>
+  <app-modal-dialog class="help-modal" #qualityMetricAndFilesHelpModal>
+    <div class="app-modal-header">
+      Help for selecting quality metric and files
+    </div>
+    <div class="app-modal-body">
+      Select the quality of the files you want to inspect, and then choose a file from the dropdown.<br/>
+      You can visualize the quality of all commits by clicking 'Show all commits' on the bottom of this panel.<br/>
+      If you visualized quality of commits, you can click on a commit node to display all files associated to this commit.
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn btn-default" (click)="qualityMetricAndFilesHelpModal.hide()">Close</button>
+    </div>
+  </app-modal-dialog>
   <div class="search-input-group">
     <label>Set quality metric</label>
     <select2 [data]="getQualityMetricListForSelect()"
@@ -33,7 +49,22 @@
     </div>
   </div>
 
-  <legend style="text-align:center;margin-top:30px;">Wrap selected files to modules</legend>
+  <legend style="text-align:center;margin-top:30px;">
+    Wrap selected files to modules
+    <fa (click)="moduleWrapperHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
+  </legend>
+  <app-modal-dialog class="help-modal" #moduleWrapperHelpModal>
+    <div class="app-modal-header">
+      Help for wrapping selected files to modules
+    </div>
+    <div class="app-modal-body">
+      If you are visualizing files, you can see a list of these files below the select box 'Add file to visualization'.<br/>
+      You can drag and drop these files to the module dropzone and they get aggregated into one trend.
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn btn-default" (click)="moduleWrapperHelpModal.hide()">Close</button>
+    </div>
+  </app-modal-dialog>
   <div class="search-input-group">
     <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
       <div class="module-file-dropzone" [hidden]="getModuleFileData().length > 0"><i>Drop files that you want to wrap in a module here!</i></div>
@@ -53,21 +84,55 @@
   </div>-->
   <app-diff-panel #diffPanel></app-diff-panel>
 
-  <legend style="text-align:center;margin-top:30px;">Compare commit trends</legend>
+  <legend style="text-align:center;margin-top:30px;">
+    Compare commit trends
+    <fa (click)="compareCommitTrendsHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
+  </legend>
+  <app-modal-dialog class="help-modal" #compareCommitTrendsHelpModal>
+    <div class="app-modal-header">
+      Help for comparing commit trends
+    </div>
+    <div class="app-modal-body">
+      If you want to compare different quality metrics for each commit, you can do this by selecting quality metrics from the dropdown list.
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn btn-default" (click)="compareCommitTrendsHelpModal.hide()">Close</button>
+    </div>
+  </app-modal-dialog>
   <div class="search-input-group">
-    <label>Set quality metric</label>
+    <label>Add commit quality metric trend to visualization</label>
     <select2 [data]="getQualityMetricListForSelect()"
              [options]="getSelectLayoutOptions()"
-             (valueChanged)="setFirstQualityMetricSelectValueForCompare( $event.value )">
+             (valueChanged)="setQualityMetricSelectValueForCompare( $event.value )">
     </select2>
-    <label>Set quality metric</label>
-    <select2 [data]="getQualityMetricListForSelect()"
-             [options]="getSelectLayoutOptions()"
-             (valueChanged)="setSecondQualityMetricSelectValueForCompare( $event.value )">
-    </select2>
+    <div id="selected-commit-qualities-holder">
+      <div class="list-for-delete-panel"
+           *ngFor="let commitQuality of getCommitQualityCompareList()">
+        {{lookupQualityNameForKey(commitQuality)}}
+        <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
+      </div>
+    </div>
   </div>
 
-  <legend style="text-align:center;margin-top:30px;">Customize View</legend>
+  <legend style="text-align:center;margin-top:30px;">
+    Customize View
+    <fa (click)="customizeViewHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
+  </legend>
+  <app-modal-dialog class="help-modal" #customizeViewHelpModal>
+    <div class="app-modal-header">
+      Help for customizing the view
+    </div>
+    <div class="app-modal-body">
+      Show all commits triggers renders all commits to the visualization that may be selected with the above options and puts them to the foreground.
+      Show all files renders all files to the visualization that may be selected with the above options and puts them to the foreground.
+      Show commits and files renders both, files and commits, that may be selected with the above options and puts both to the foreground.
+      Fade Files puts all current file visualizations in the background.
+      Fade Commits puts all current commit visualizations in the background.
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn btn-default" (click)="customizeViewHelpModal.hide()">Close</button>
+    </div>
+  </app-modal-dialog>
   <div class="search-input-group">
     <div class="button" (click)="showCommitView()">Show all commits</div>
     <div class="button" (click)="showFileView()">Show all files</div>

@@ -1,9 +1,9 @@
 <div class="horizontal-flex-wrapper">
   <div class="vertical-flex-wrapper" id="left-options" style="border-right:dashed 1px black">
     <app-options-panel #optionsPanel
-            (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization()"
+            (addSelectedCommitQualityListToVisualizationEvent)="addCommitQualityListToVisualization();"
             (addFileToVisualizationEvent)="addFileToVisualization()"
-            (qualityMetricChangedEvent)="qualityMetricChanged()"
+            (qualityMetricChangedEvent)="qualityMetricChanged();addFileListToVisualization();"
             (removeFileFromVisualizationEvent)="removeFileFromVisualization()"
             (removeCommitQualityFromVisualizationEvent)="removeCommitQualityFromVisualization()"
             (clearFileViewEvent)="clearFileView()"
