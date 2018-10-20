@@ -67,6 +67,25 @@ export class TrendChartComponent implements OnInit {
             this.initSvg();
             this.renderAxis();
             this.initOptionsPanel( data["file-names"], this.fileColorLookupArray, data["quality-metrics"] );
+            this.initGridLines();
+
+                // add the X gridlines
+                /*this.trendVisualizationWrapper.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", "translate(0," + this.height + ")")
+                    .call(this.makeXGridLines()
+                        .tickSize(-this.height)
+                        .tickFormat("")
+                    )
+
+                // add the Y gridlines
+                this.trendVisualizationWrapper.append("g")
+                    .attr("class", "grid")
+                    .call(this.makeYGridlines()
+                        .tickSize(-this.width)
+                        .tickFormat("")
+                    )*/
+
         });
     }
 
@@ -471,7 +490,7 @@ export class TrendChartComponent implements OnInit {
 
             })
             .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-            .attr('r', 10);
+            .attr('r', 5);
 
         currentNode.on("click", function(d) {
                 if( that.diffPanel.getLeftFileFixated() ) {
@@ -801,6 +820,33 @@ export class TrendChartComponent implements OnInit {
         }
 
         return;
+    }
+
+
+    /**
+     * renders gridlines into the trend chart svg
+     */
+    public initGridLines(): void {
+        this.trendVisualizationWrapper
+            .append("g")
+            .attr("class", "grid")
+            .call( this.generateYAxisTicks().tickSize(this.width).tickFormat("") );
+
+        this.trendVisualizationWrapper
+            .append("g")
+            .attr("class", "grid")
+            .attr("transform", "translate(0," + this.height + ")")
+            .call( this.generateXAxisTicks().tickSize(-this.height).tickFormat("") );
+    }
+
+    // gridlines in x axis function
+    public generateXAxisTicks() {
+        return this.xAxis.ticks(10);
+    }
+
+    // gridlines in y axis function
+    public generateYAxisTicks() {
+        return this.yAxis.ticks(10);
     }
 
     /**
