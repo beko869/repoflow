@@ -1,4 +1,5 @@
 const arangoDatabaseConnection = require('./arangoDatabaseConnection');
+const colorScheme = require('./colorScheme');
 
 let helper = {};
 
@@ -27,6 +28,11 @@ helper.updateFileCollectionWithQualityData = function updateSHAFilePairsWithQual
 //returns promise
 helper.insertQualityMetricCollection = function updateSHAFilePairsWithQualityData( paraQualityMetricArray ){
     let qualityMetricCollection = arangoDatabaseConnection.collection( 'quality_metric' );
+
+    for( let i = 0; i < paraQualityMetricArray.length; i++ ){
+        paraQualityMetricArray[i].color = colorScheme[colorScheme.length-i-1];
+    }
+
     //TODO validate if quality key already exists
     return qualityMetricCollection.import( paraQualityMetricArray );
 };

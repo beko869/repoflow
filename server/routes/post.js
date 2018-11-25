@@ -250,7 +250,7 @@ router.put('/quality', (req,res,next)=>{
     //DEMONSTRATION
     if( req.body.compute_js_metrics == 1 )
     {
-        console.log
+        //console.log
 
         //Demonstration mit JSHint
         helper.selectSHAFileArray()

@@ -73,3 +73,7 @@ app-diff-panel {
 .grid path {
     stroke-width: 0;
 }
+
+.context-menu-item:hover{
+        cursor:pointer;
+}

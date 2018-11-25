@@ -58,9 +58,23 @@ export class UtilityService {
      * @returns the color lookup array that can be searched for a filename
      */
     public createFileNameColorLookupForArray( paraArray: any ) {
-        var lookup = {};
-        for (var i = 0, len = paraArray.length; i < len; i++) {
+        let lookup = {};
+        for (let i = 0, len = paraArray.length; i < len; i++) {
             lookup[paraArray[i].name] = paraArray[i];
+        }
+
+        return lookup;
+    }
+
+    /**
+     * returns a lookup that can be searched for the name of an object in an array
+     * @param paraArray an array with objects, the objects have to contain an id field
+     * @returns the color lookup array that can be searched for a filename
+     */
+    public createQualityColorLookupForArray( paraArray: any ) {
+        let lookup = {};
+        for (let i = 0, len = paraArray.length; i < len; i++) {
+            lookup[paraArray[i].key] = paraArray[i].color;
         }
 
         return lookup;
