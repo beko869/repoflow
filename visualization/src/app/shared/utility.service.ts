@@ -81,6 +81,20 @@ export class UtilityService {
     }
 
     /**
+     * returns a lookup that can be searched for the name of an object in an array
+     * @param paraArray an array with objects, the objects have to contain an id field
+     * @returns the color lookup array that can be searched for a filename
+     */
+    public createQualityLabelLookupForArray( paraArray: any ) {
+        let lookup = {};
+        for (let i = 0, len = paraArray.length; i < len; i++) {
+            lookup[paraArray[i].key] = paraArray[i].label;
+        }
+
+        return lookup;
+    }
+
+    /**
      * returns the closest value in an array that is lower than the the given value
      * @param paraArray
      * @param paraValue

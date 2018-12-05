@@ -14,6 +14,7 @@ import {OptionsPanelValuesService} from "../shared/options-panel-values.service"
 import {DiffPanelValuesService} from "../shared/diff-panel-values.service";
 import {ApiService} from "../shared/api.service";
 import {D3Helper} from "../d3-helper/d3-helper";
+import {current} from "codelyzer/util/syntaxKind";
 
 
 @Component({
@@ -42,6 +43,7 @@ export class TrendChartComponent implements OnInit {
     private tooltip: any;
     private fileColorLookupArray: any;
     private qualityColorLookupArray: any;
+    private qualityLabelLookupArray: any;
     private isFileDetailViewVisible: boolean;
     private diffPanel: any;
     private contextMenu: any;
@@ -65,6 +67,7 @@ export class TrendChartComponent implements OnInit {
             .subscribe( (data)=>{
                 this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
                 this.qualityColorLookupArray = this.utility.createQualityColorLookupForArray( data["quality-metrics"] );
+                this.qualityLabelLookupArray = this.utility.createQualityLabelLookupForArray( data["quality-metrics"] );
                 this.initScales( data["commit-nodes"] );
                 this.initAxis();
                 this.initSvg();
@@ -240,7 +243,9 @@ export class TrendChartComponent implements OnInit {
 
         this.trendVisualizationWrapper
             .on('click',()=>{
-                this.contextMenu.style('display','none');
+                if( this.contextMenu ){
+                    this.contextMenu.style('display','none');
+                }
             });
 
     }
@@ -360,39 +365,101 @@ export class TrendChartComponent implements OnInit {
     public renderCommitViewNodes( paraCommitNodesData: any, paraQualityMetric: any, paraMinMaxValues: any ): void {
         let currentXScale = this.getCurrentXScale();
 
-        this.normalizationQuotient = paraMinMaxValues[0].max - paraMinMaxValues[0].min;
-        this.normalizationMinValue = paraMinMaxValues[0].min;
+        this.apiService.getMinMaxOfMetric( paraQualityMetric )
+            .subscribe(
+                (callResult)=>{
+                    this.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                    this.normalizationMinValue = callResult.min_max_values[0].min;
+                },
+                (error)=>{
+                    console.log(error);
+                },
+                ()=>{
+                    this.trendVisualizationWrapper.append('g').selectAll('rect')
+                        .data(paraCommitNodesData)
+                        .enter()
+                        .append('circle')
+                        .attr('class', (d)=>{ return 'commit-view-node ' + paraQualityMetric + ' sha' + d.id;})
+                        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
+                        .attr('cy', (d)=>{
+                            return this.yScale( this.getNormalizedValue( ( d[paraQualityMetric] > 0 ? d[paraQualityMetric] : 0 ) ) );
+                        })
+                        .attr('fill', (d)=>{ return this.qualityColorLookupArray[paraQualityMetric]; })
+                        .attr('r', (d)=>{ return 15; })
+                        .attr('style',(d)=>{ return ( (d[paraQualityMetric] ? 'display:block' : 'display:none' ) ) })
+                        .attr('data-qualityidentifier', paraQualityMetric)
+                        .attr('data-qualityvalue', (d)=>{ return d[paraQualityMetric] })
+                        .on('click',(d)=>{
+                            this.renderFilesOfCommit( d.id );
+                        })
+                        .on("mouseover", (d)=>{
 
-        this.trendVisualizationWrapper.append('g').selectAll('rect')
-        .data(paraCommitNodesData)
-        .enter()
-        .append('circle')
-        .attr('class','commit-view-node ' + paraQualityMetric)
-        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
-        .attr('cy', (d)=>{
-            return this.yScale( this.getNormalizedValue( ( d[paraQualityMetric] > 0 ? d[paraQualityMetric] : 0 ) ) );
-        })
-        .attr('fill', (d)=>{ return this.qualityColorLookupArray[paraQualityMetric]; })
-        .attr('r', (d)=>{ return 15 })
-        .on('click',(d)=>{
-            this.renderFilesOfCommit( d.id );
-        })
-        .on("mouseover", (d)=>{
-            let qualityValue = this.getNormalizedValue( d[paraQualityMetric] );
+                            this.apiService.getMinMaxOfMetric( paraQualityMetric )
+                                .subscribe(
+                                    (callResult)=>{
+                                        this.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                                        this.normalizationMinValue = callResult.min_max_values[0].min;
+                                    },
+                                    (error)=>{
+                                        console.log(error);
+                                    },
+                                    ()=>{
+                                        let qualityValue = this.getNormalizedValue( d[paraQualityMetric] );
+                                        let that = this;
 
-            this.optionsPanelValueService.setInfo({
-                "value": d[paraQualityMetric] + " " + this.optionsPanelValueService.lookupQualityNameForKey( paraQualityMetric ),
-                "sha": d.id,
-                "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
-                "filecount": d.fileCount
-            });
-            this.optionsPanel.ref.markForCheck();
+                                        this.optionsPanelValueService.setInfo({
+                                            "value": d[paraQualityMetric] + " " + this.optionsPanelValueService.lookupQualityNameForKey( paraQualityMetric ),
+                                            "sha": d.id,
+                                            "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
+                                            "filecount": d.fileCount
+                                        });
+                                        this.optionsPanel.ref.markForCheck();
 
-            this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue );
-        })
-        .on("mouseout",()=>{
-            this.removeDashedGuideLines();
-        });
+                                        this.renderDashedGuideLineToXAxis( new Date(d.datetime), qualityValue );
+
+                                        this.trendVisualizationWrapper
+                                            .selectAll( ".commit-view-node.sha" + d.id ).transition().duration(500).attr('r',20)
+                                            .each(function(d){
+                                                let currentNode = d3Selection.select(this);
+                                                let currentY = currentNode.attr('cy');
+                                                let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
+                                                let currentQualityValue = currentNode.attr('data-qualityvalue');
+                                                let xScaleForNode = that.getCurrentXScale();
+
+                                                let tooltipContainer = that.trendVisualizationWrapper
+                                                    .append('g')
+                                                    .attr('class','commit-view-node-tooltip')
+                                                    .attr('transform', 'translate(' + (xScaleForNode( new Date(d.datetime) ) + 15 ) + ',' + currentY + ')' );
+
+                                                tooltipContainer
+                                                    .append('rect')
+                                                    .attr('width',120)
+                                                    .attr('height',25)
+                                                    .attr('fill','#eee');
+
+                                                tooltipContainer
+                                                    .append('text')
+                                                    .style('fill','black')
+                                                    .attr('transform', 'translate(0,18)' )
+                                                    .text( currentQualityValue + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+
+                                                that.fadeInD3Element( tooltipContainer );
+                                            })
+
+
+
+                                    });
+                        })
+                        .on("mouseout",()=>{
+                            this.removeDashedGuideLines();
+                            d3Selection.selectAll('.commit-view-node-tooltip').remove();
+                            d3Selection.selectAll('.commit-view-node').transition().duration(500).attr('r',15);
+
+                        });
+
+                });
+
+
     }
 
     /**
@@ -403,13 +470,16 @@ export class TrendChartComponent implements OnInit {
     public renderDashedGuideLineToXAxis( paraX, paraY, paraNormMin = null, paraNormQuot = null ){
         let currentXScale = this.getCurrentXScale();
 
-        this.trendVisualizationWrapper.append("g")
+        let xScaleDashedGuideLine = this.trendVisualizationWrapper.append("g")
             .attr("class","guide-line x")
             .append("line")
             .attr('y1', ( paraY > 0 ? this.yScale(paraY) : 0 ) ).attr('y2', ( paraY > 0 ? this.yScale(paraY) : 0 ) )
             .attr("x1", 0 ).attr("x2", currentXScale( paraX ) )
             .attr("stroke-width", 1)
-            .attr("stroke", "gray");
+            .attr("stroke", "gray")
+            .attr("pointer-events", "none")
+
+        this.fadeInD3Element( xScaleDashedGuideLine );
     }
 
     /**
@@ -420,13 +490,16 @@ export class TrendChartComponent implements OnInit {
     public renderDashedGuideLineToYAxis( paraX, paraY ){
         let currentXScale = this.getCurrentXScale();
 
-        this.trendVisualizationWrapper.append("g")
+        let yScaleDashedGuideLine = this.trendVisualizationWrapper.append("g")
             .attr("class","guide-line x")
             .append("line")
             .attr('y1', ( paraY > 0 ? this.yScale( paraY ) : 0 ) ).attr( 'y2', this.height )
             .attr("x1", currentXScale( paraX ) ).attr("x2", currentXScale( paraX ) )
             .attr("stroke-width", 1)
-            .attr("stroke", "gray");
+            .attr("stroke", "gray")
+            .attr("pointer-events", "none");
+
+        this.fadeInD3Element( yScaleDashedGuideLine )
     }
 
     public removeDashedGuideLines(){
@@ -504,7 +577,7 @@ export class TrendChartComponent implements OnInit {
                             .data(paraFileNodesData)
                             .enter()
                             .append('circle')
-                            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
+                            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId} )
                             .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
                             .attr('cy', (d)=>{
                                 let qualityValue = 0;
@@ -514,9 +587,12 @@ export class TrendChartComponent implements OnInit {
                                 return this.yScale( qualityValue );
 
                             })
-                            .attr('stroke', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-                            .attr('r', 8)
+                            .attr('data-qualityidentifier', qualityIdentifier)
+                            .attr('data-qualityvalue', (d)=>{ return d.f[ qualityIdentifier ] })
+                            .style('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
+                            .attr('r', 12)
                             .on('contextmenu', function(d) {
+                                d3Selection.select('.context-menu-item').remove();
                                 that.contextMenu = that.getContextMenuForFileViewNode( d );
                                 let coords = d3Selection.mouse(this);
 
@@ -524,8 +600,10 @@ export class TrendChartComponent implements OnInit {
                                 that.contextMenu.style('display', 'block');
                                 that.contextMenu.datum(d);
 
+                                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
+
                                 d3Selection.event.preventDefault();
-                            } );
+                            })
 
                         currentNode.on("click", function(d) {
                             if( that.diffPanel.getLeftFileFixated() ) {
@@ -534,7 +612,7 @@ export class TrendChartComponent implements OnInit {
 
                                 d3Selection.select('.right-fixated-file-node')
                                     .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
-                                    .attr('r',10)
+                                    .attr('r',12)
                                     .attr('stroke',that.fileColorLookupArray[d.f.name].color );
 
                                 d3Selection.select(this)
@@ -547,7 +625,7 @@ export class TrendChartComponent implements OnInit {
                                 that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
 
                                 d3Selection.select('.left-fixated-file-node')
-                                    .attr('r',10)
+                                    .attr('r',12)
                                     .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
                                     .attr('stroke',that.fileColorLookupArray[d.f.name].color );
 
@@ -560,21 +638,63 @@ export class TrendChartComponent implements OnInit {
 
                             //this.showFileDetailView( d.f.fileContent );
                         })
-                            .on("mouseover", (d) => {
-                                this.optionsPanelValueService.setInfo( {
+                            .on("mouseover", function(d){
+                                let fileName = d.f.name.split("/").join("").split(".").join("");
+                                that.optionsPanelValueService.setInfo( {
                                     "filename":d.f.name,
-                                    "value": d.f[qualityIdentifier] + " " + qualityIdentifier,
+                                    "value": d.f[qualityIdentifier] + " " + that.qualityLabelLookupArray[qualityIdentifier],
                                     "sha":d.f.commitId,
                                     "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
                                 } );
-                                this.optionsPanel.ref.markForCheck();
+                                that.optionsPanel.ref.markForCheck();
+                                //let coords = d3Selection.mouse(this);
 
-                                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[ qualityIdentifier ] ) );
-                                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[ qualityIdentifier ] ) );
+                                that.apiService.getMinMaxOfMetric( qualityIdentifier )
+                                    .subscribe(
+                                        (callResult)=>{
+                                            that.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                                            that.normalizationMinValue = callResult.min_max_values[0].min;
+                                        },
+                                        (error)=>{
+                                            console.log(error);
+                                        },
+                                        ()=>{
+                                            that.renderDashedGuideLineToXAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
+                                            that.renderDashedGuideLineToYAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
+                                            that.trendVisualizationWrapper
+                                            .selectAll( ".file-view-node."+fileName+".sha" + d.f.commitId ).transition().duration(500).attr('r',20)
+                                            .each(function(d){
+                                                let currentNode = d3Selection.select(this);
+                                                let currentY = currentNode.attr('cy');
+                                                let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
+                                                let currentQualityValue = currentNode.attr('data-qualityvalue');
+                                                let xScaleForNode = that.getCurrentXScale();
 
+                                                let tooltipContainer = that.trendVisualizationWrapper
+                                                    .append('g')
+                                                    .attr('class','file-view-node-tooltip')
+                                                    .attr('transform', 'translate(' + (xScaleForNode( new Date(d.c.datetime) ) + 15 ) + ',' + currentY + ')' );
+
+                                                tooltipContainer
+                                                    .append('rect')
+                                                    .attr('width',120)
+                                                    .attr('height',25)
+                                                    .attr('fill','#eee');
+
+                                                tooltipContainer
+                                                    .append('text')
+                                                    .style('fill','black')
+                                                    .attr('transform', 'translate(0,18)' )
+                                                    .text( currentQualityValue + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+
+                                                that.fadeInD3Element( tooltipContainer );
+                                            })
+                                        });
                             })
-                            .on("mouseout", ()=>{
+                            .on("mouseout", (d)=>{
                                 this.removeDashedGuideLines();
+                                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
+                                d3Selection.selectAll( ".file-view-node" ).transition().duration(400).attr('r',12);
                             });
                     });
 
@@ -592,7 +712,6 @@ export class TrendChartComponent implements OnInit {
 
         //if paraQuality is set, use it, else use the selected quality identifier from the dropdown
         let qualityIdentifier = paraQuality ? paraQuality : this.optionsPanelValueService.getQualityMetricSelectValue();
-        console.log(qualityIdentifier);
 
         //erst quotient checken für normalisierung auf den achsen
         //in der complete funktion passiert dann das ganze rendering
@@ -641,6 +760,7 @@ export class TrendChartComponent implements OnInit {
                         .attr("stroke-linejoin", "round")
                         .attr("stroke-linecap", "round")
                         .attr("stroke-width", 3)
+                        .attr("pointer-events", "none")
                         .attr("d", line)
                         .attr("clip-path","url(#clipper)");
                 });
@@ -779,7 +899,6 @@ export class TrendChartComponent implements OnInit {
      * sets values for computing normalized values
      */
     public qualityMetricChanged(): void {
-
         //set min and max for axis rendering
         this.apiService.getMinMaxOfMetric( this.optionsPanelValueService.getQualityMetricSelectValue() )
             .subscribe( (callResult)=>{
@@ -941,7 +1060,9 @@ export class TrendChartComponent implements OnInit {
 
         /* build context menu */
         let m = this.trendVisualizationWrapper.append("g");
-        m.style('display', 'none');
+            m.style('display', 'none')
+            .attr('class', 'context-menu-item');
+
 
         let r = m.append('rect')
             .attr('height', menu.length * 25)
@@ -964,7 +1085,6 @@ export class TrendChartComponent implements OnInit {
             .on('click', function(d,i){
                 d.action(d,i);
             })
-            .attr('class', 'context-menu-item')
             .append('text')
             .text(function(d) {
                 return d.title;
@@ -978,5 +1098,12 @@ export class TrendChartComponent implements OnInit {
         r.attr('width', w + 20);
 
         return m;
+    }
+
+    public fadeInD3Element( paraElement: any ):void {
+        paraElement
+            .attr('style','opacity:0')
+            .transition().duration(500)
+            .attr('style','opacity:1');
     }
 }

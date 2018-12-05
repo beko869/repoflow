@@ -51,6 +51,10 @@ export class OptionsPanelValuesService {
 
     public setQualityMetricSelectValue( paraValue: string ){
         this.qualityMetricSelectValue = paraValue;
+
+        //change this if list behavior is desired
+        this.selectedCommitQualityList = [];
+
         this.selectedCommitQualityList.push( paraValue );
     }
 

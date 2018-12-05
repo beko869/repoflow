@@ -17,7 +17,7 @@
     </div>
   </app-modal-dialog>
   <div class="search-input-group">
-    <label>Set quality metric</label>
+    <label>Set quality metric for files</label>
     <select2 [data]="getQualityMetricListForSelect()"
              [options]="getSelectLayoutOptions()"
              (valueChanged)="setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( $event.value )">
