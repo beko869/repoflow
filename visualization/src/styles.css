@@ -47,3 +47,7 @@ nav .nav-label{
     -moz-transition: all 0.3s;
     transition: all 0.3s;
 }
+
+.CodeMirror-merge, .CodeMirror-merge .CodeMirror {
+    height: 700px !important;
+}

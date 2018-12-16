@@ -107,7 +107,8 @@
     </select2>
     <div id="selected-commit-qualities-holder">
       <div class="list-for-delete-panel"
-           *ngFor="let commitQuality of getCommitQualityCompareList()">
+           *ngFor="let commitQuality of getCommitQualityCompareList()"
+           [style.color]="getQualityColorByLabel( commitQuality )">
         {{lookupQualityNameForKey(commitQuality)}}
         <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
       </div>

@@ -51,6 +51,7 @@ export class TrendChartComponent implements OnInit {
     @ViewChild('optionsPanel') optionsPanel;
     @ViewChild('codeEditor') codeEditor;
     @ViewChild('trendContainer') trendContainer: ElementRef;
+    @ViewChild('legendContainer') legendContainer;
 
 
     constructor(private utility: UtilityService, private optionsPanelValueService: OptionsPanelValuesService, private diffPanelValueService: DiffPanelValuesService, private apiService: ApiService ) {
@@ -68,11 +69,12 @@ export class TrendChartComponent implements OnInit {
                 this.fileColorLookupArray = this.utility.createFileNameColorLookupForArray( data["file-colors"] );
                 this.qualityColorLookupArray = this.utility.createQualityColorLookupForArray( data["quality-metrics"] );
                 this.qualityLabelLookupArray = this.utility.createQualityLabelLookupForArray( data["quality-metrics"] );
+                this.legendContainer.setLookupArray( this.qualityColorLookupArray );
                 this.initScales( data["commit-nodes"] );
                 this.initAxis();
                 this.initSvg();
                 this.renderAxis();
-                this.initOptionsPanel( data["file-names"], this.fileColorLookupArray, data["quality-metrics"] );
+                this.initOptionsPanel( data["file-names"], this.fileColorLookupArray, data["quality-metrics"], this.qualityColorLookupArray );
                 this.initGridLines();
 
                 // add the X gridlines
@@ -139,8 +141,10 @@ export class TrendChartComponent implements OnInit {
      * @param paraData array containing files data
      */
     public renderFileView( paraData: any, paraQuality?: string ): void {
-        this.renderFileViewNodes( paraData["files"], paraQuality );
+
+        //this.clearFileView();
         this.renderFileViewFileLinks( paraData["files"], paraQuality )
+        this.renderFileViewNodes( paraData["files"], paraQuality );
     }
 
 
@@ -183,17 +187,24 @@ export class TrendChartComponent implements OnInit {
     /**
      * clears the view from all elements containing file classes
      */
-    public clearFileView( paraFileName:string = null ): void {
+    public clearFileView( paraFileName:string = null, paraQualityName:string = null ): void {
         this.clearFileDetailView();
         this.fadeCommitViewToForeGround();
 
         if( paraFileName === null ) {
             d3Selection.selectAll('.file-view-node').remove();
             d3Selection.selectAll('.file-view-link').remove();
+            d3Selection.selectAll('.file-view-node-icon').remove();
         }
-        else {
+        else if( paraFileName != null && paraQualityName == null ) {
             d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("")).remove();
             d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("")).remove();
+            d3Selection.selectAll('.file-view-node-icon.' + paraFileName.split("/").join("").split(".").join("")).remove();
+        }
+        else if( paraFileName != null && paraQualityName != null ){
+            d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
+            d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
+            d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
         }
     }
 
@@ -298,10 +309,11 @@ export class TrendChartComponent implements OnInit {
     /**
      * initialize the options panel
      */
-    public initOptionsPanel( paraFileNamesArray: string[], paraFileColorsArray: any, paraQualityMetricArray: any ): void {
+    public initOptionsPanel( paraFileNamesArray: string[], paraFileColorsArray: any, paraQualityMetricArray: any, paraQualityColorArray: any ): void {
         //this.optionsPanel.setFileList( paraFileNamesArray );
         this.optionsPanel.setFileColorList( paraFileColorsArray );
         this.optionsPanel.setQualityMetricList( paraQualityMetricArray );
+        this.optionsPanel.setQualityColorList( paraQualityColorArray );
     }
 
     /**
@@ -338,13 +350,15 @@ export class TrendChartComponent implements OnInit {
                 //scale file stuff to zoom scale
                 this.trendVisualizationWrapper.selectAll(".file-view-node")
                     .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
+                this.trendVisualizationWrapper.selectAll(".file-view-node-icon")
+                    .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
                 this.trendVisualizationWrapper.selectAll(".file-view-link")
                     .attr( "d", line );
 
 
                 //scale commit stuff to zoom scale
                 this.trendVisualizationWrapper.selectAll(".commit-view-node")
-                    .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+                    .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
                 this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
                     .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
                     .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
@@ -378,19 +392,30 @@ export class TrendChartComponent implements OnInit {
                     this.trendVisualizationWrapper.append('g').selectAll('rect')
                         .data(paraCommitNodesData)
                         .enter()
-                        .append('circle')
+                        //.append('circle')
+                        .append('rect')
                         .attr('class', (d)=>{ return 'commit-view-node ' + paraQualityMetric + ' sha' + d.id;})
-                        .attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
-                        .attr('cy', (d)=>{
-                            return this.yScale( this.getNormalizedValue( ( d[paraQualityMetric] > 0 ? d[paraQualityMetric] : 0 ) ) );
-                        })
+                        //.attr('cx', (d)=>{ return currentXScale( new Date(d.datetime) ) })
+                        //.attr('cy', (d)=>{
+                        //    return this.yScale( this.getNormalizedValue( ( d[paraQualityMetric] > 0 ? d[paraQualityMetric] : 0 ) ) );
+                        //})
+                        .attr('x', (d)=>{return currentXScale( new Date(d.datetime) ) })
+                        .attr('y', (d)=>{return this.yScale( this.getNormalizedValue( ( d[paraQualityMetric] > 0 ? d[paraQualityMetric] : 0 ) ) );})
+                        .attr('width', 20)
+                        .attr('height', 20)
+                        .attr('rx',5)
+                        .attr('ry',5)
+                        .attr('transform', 'translate(-10,-10)')
                         .attr('fill', (d)=>{ return this.qualityColorLookupArray[paraQualityMetric]; })
-                        .attr('r', (d)=>{ return 15; })
+                        //.attr('r', (d)=>{ return 15; })
                         .attr('style',(d)=>{ return ( (d[paraQualityMetric] ? 'display:block' : 'display:none' ) ) })
                         .attr('data-qualityidentifier', paraQualityMetric)
                         .attr('data-qualityvalue', (d)=>{ return d[paraQualityMetric] })
                         .on('click',(d)=>{
                             this.renderFilesOfCommit( d.id );
+                            //d3Selection.selectAll('.commit-view-node').transition().duration(50).style("opacity", 0.15);
+                            //d3Selection.selectAll('.commit-view-link').transition().duration(50).style("opacity", 0.15);
+                            //d3Selection.selectAll('.commit-view-balloon-line').transition().duration(50).style("opacity", 0.15);
                         })
                         .on("mouseover", (d)=>{
 
@@ -421,7 +446,7 @@ export class TrendChartComponent implements OnInit {
                                             .selectAll( ".commit-view-node.sha" + d.id ).transition().duration(500).attr('r',20)
                                             .each(function(d){
                                                 let currentNode = d3Selection.select(this);
-                                                let currentY = currentNode.attr('cy');
+                                                let currentY = currentNode.attr('y');
                                                 let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
                                                 let currentQualityValue = currentNode.attr('data-qualityvalue');
                                                 let xScaleForNode = that.getCurrentXScale();
@@ -433,7 +458,7 @@ export class TrendChartComponent implements OnInit {
 
                                                 tooltipContainer
                                                     .append('rect')
-                                                    .attr('width',120)
+                                                    .attr('width',250)
                                                     .attr('height',25)
                                                     .attr('fill','#eee');
 
@@ -441,7 +466,7 @@ export class TrendChartComponent implements OnInit {
                                                     .append('text')
                                                     .style('fill','black')
                                                     .attr('transform', 'translate(0,18)' )
-                                                    .text( currentQualityValue + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+                                                    .text( 'Commit average: ' + parseFloat(currentQualityValue).toFixed(2) + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
 
                                                 that.fadeInD3Element( tooltipContainer );
                                             })
@@ -454,6 +479,13 @@ export class TrendChartComponent implements OnInit {
                             this.removeDashedGuideLines();
                             d3Selection.selectAll('.commit-view-node-tooltip').remove();
                             d3Selection.selectAll('.commit-view-node').transition().duration(500).attr('r',15);
+
+                            this.optionsPanelValueService.setInfo( {
+                                "filename":'-',
+                                "value": '-',
+                                "sha":'-',
+                                "time":'-'
+                            } );
 
                         });
 
@@ -527,7 +559,7 @@ export class TrendChartComponent implements OnInit {
             .attr('y2', (d)=>{
                 return this.yScale( this.getNormalizedValue( d[paraQualityMetric] ) );
             })
-            .attr("stroke-width", 2)
+            .attr("stroke-width", 1)
             .attr("stroke", this.qualityColorLookupArray[paraQualityMetric]);
     }
 
@@ -572,12 +604,20 @@ export class TrendChartComponent implements OnInit {
                         //console.log( this.normalizationQuotient );
                         //console.log( this.normalizationMinValue );
 
+                        //remove if we already have a trend path for this filename
+                        for( let i = 0; i<paraFileNodesData.length; i++ ){
+                            let tmpFileName = paraFileNodesData[i].f.name;
+                            this.clearFileView(tmpFileName, qualityIdentifier);
+                        }
+
                         //add main dot to fileview nodes
                         let currentNode = this.trendVisualizationWrapper.append('g').selectAll('rect')
                             .data(paraFileNodesData)
                             .enter()
                             .append('circle')
-                            .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId} )
+                            .attr('class', (d)=>{
+                                return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+                            })
                             .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
                             .attr('cy', (d)=>{
                                 let qualityValue = 0;
@@ -590,8 +630,63 @@ export class TrendChartComponent implements OnInit {
                             .attr('data-qualityidentifier', qualityIdentifier)
                             .attr('data-qualityvalue', (d)=>{ return d.f[ qualityIdentifier ] })
                             .style('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
+                            .style('fill-opacity', 0.3 )
+                            .style('stroke',(d)=>{ return this.fileColorLookupArray[d.f.name].color })
+                            .style('stroke-width', 2 )
+                            //.style('stroke-opacity',0.8)
                             .attr('r', 12)
-                            .on('contextmenu', function(d) {
+
+
+                        this.trendVisualizationWrapper.append('g').selectAll('text')
+                            .data(paraFileNodesData)
+                            .enter()
+                            .append('text')
+                            .attr('class', (d)=>{
+                                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+                            })
+                            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+                            .attr('y', (d)=>{
+                                let qualityValue = 0;
+                                if( d.f.status != 'deleted' ){
+                                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
+                                }
+                                return this.yScale( qualityValue );
+
+                            }).attr('font-family', 'FontAwesome')
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .attr('fill','darkred')
+                            .attr('font-size', function(d) { return '17px'} )
+                            .attr("pointer-events", "none")
+                            .attr('visibility', (d)=>{ return ( d.f.status == 'deleted' ? 'default' : 'hidden' ) })
+                            .text(function(d) { return '\uf1f8'});
+
+
+                        this.trendVisualizationWrapper.append('g').selectAll('text')
+                            .data(paraFileNodesData)
+                            .enter()
+                            .append('text')
+                            .attr('class', (d)=>{
+                                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+                            })
+                            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+                            .attr('y', (d)=>{
+                                let qualityValue = 0;
+                                if( d.f.status != 'deleted' ){
+                                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
+                                }
+                                return this.yScale( qualityValue );
+
+                            }).attr('font-family', 'FontAwesome')
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .attr('fill','darkgreen')
+                            .attr('font-size', function(d) { return '17px'} )
+                            .attr("pointer-events", "none")
+                            .attr('visibility', (d)=>{ return ( d.f.status == 'added' ? 'default' : 'hidden' ) })
+                            .text(function(d) { return '\uf0c7'});
+
+                        currentNode.on('contextmenu', function(d) {
                                 d3Selection.select('.context-menu-item').remove();
                                 that.contextMenu = that.getContextMenuForFileViewNode( d );
                                 let coords = d3Selection.mouse(this);
@@ -603,38 +698,54 @@ export class TrendChartComponent implements OnInit {
                                 d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
 
                                 d3Selection.event.preventDefault();
-                            })
+                            });
 
                         currentNode.on("click", function(d) {
+
+
+                            let qualityLabel = that.qualityLabelLookupArray[qualityIdentifier];
+                            let qualityValue = d.f[qualityIdentifier];
+                            let qualityColor = that.qualityColorLookupArray[qualityIdentifier];
+
+                            that.diffPanelValueService.setFileName( d.f.name )
+                            that.diffPanelValueService.setQualityColor( qualityColor );
+
                             if( that.diffPanel.getLeftFileFixated() ) {
                                 that.diffPanelValueService.setRightContent( d.f.fileContent )
+
+                                that.diffPanelValueService.setRightQualityLabel( qualityLabel );
+                                that.diffPanelValueService.setRightQualityValue( qualityValue );
+
                                 that.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
 
                                 d3Selection.select('.right-fixated-file-node')
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
+                                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
                                     .attr('r',12)
-                                    .attr('stroke',that.fileColorLookupArray[d.f.name].color );
+                                    ;
 
                                 d3Selection.select(this)
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node')
+                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
                                     .attr('r',15)
-                                    .attr('stroke','darkorchid');
+                                    ;
                             }
                             else {
                                 that.diffPanelValueService.setLeftContent( d.f.fileContent )
                                 that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
 
+                                that.diffPanelValueService.setLeftQualityLabel( qualityLabel );
+                                that.diffPanelValueService.setLeftQualityValue( qualityValue );
+
                                 d3Selection.select('.left-fixated-file-node')
-                                    .attr('r',12)
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join(""))
-                                    .attr('stroke',that.fileColorLookupArray[d.f.name].color );
+                                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
+                                    .attr('r',12);
 
                                 d3Selection.select(this)
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node')
-                                    .attr('r',15)
-                                    .attr('stroke','darkcyan');
+                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
+                                    .attr('r',15);
 
                             }
+
+                            d3Selection.event.stopPropagation();
 
                             //this.showFileDetailView( d.f.fileContent );
                         })
@@ -677,7 +788,7 @@ export class TrendChartComponent implements OnInit {
 
                                                 tooltipContainer
                                                     .append('rect')
-                                                    .attr('width',120)
+                                                    .attr('width',250)
                                                     .attr('height',25)
                                                     .attr('fill','#eee');
 
@@ -685,7 +796,7 @@ export class TrendChartComponent implements OnInit {
                                                     .append('text')
                                                     .style('fill','black')
                                                     .attr('transform', 'translate(0,18)' )
-                                                    .text( currentQualityValue + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+                                                    .text( 'File: ' + parseFloat(currentQualityValue).toFixed(2) + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
 
                                                 that.fadeInD3Element( tooltipContainer );
                                             })
@@ -694,7 +805,14 @@ export class TrendChartComponent implements OnInit {
                             .on("mouseout", (d)=>{
                                 this.removeDashedGuideLines();
                                 d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
-                                d3Selection.selectAll( ".file-view-node" ).transition().duration(400).attr('r',12);
+                                d3Selection.selectAll( ".file-view-node:not(.left-fixated-file-node):not(.right-fixated-file-node)" ).transition().duration(400).attr('r',12);
+
+                                that.optionsPanelValueService.setInfo( {
+                                    "filename":'-',
+                                    "value": '-',
+                                    "sha":'-',
+                                    "time":'-'
+                                } );
                             });
                     });
 
@@ -779,7 +897,7 @@ export class TrendChartComponent implements OnInit {
             .data(paraFileNodesData)
             .enter()
             .append('circle')
-            .attr('class', (d)=>{ return 'module-view-node '+ d.f.name.split("/").join("").split(".").join("") } )
+            .attr('class', (d)=>{ return 'module-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId } )
             .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
             .attr('cy', (d)=>{
                 let qualityValue = 0;
@@ -789,25 +907,79 @@ export class TrendChartComponent implements OnInit {
                 return this.yScale( qualityValue );
 
             })
+            .attr('data-qualityidentifier', this.optionsPanelValueService.getQualityMetricSelectValue())
+            .attr('data-qualityvalue', (d)=>{ return d.f[ this.optionsPanelValueService.getQualityMetricSelectValue() ] })
             .attr('stroke', (d)=>{ return 'red' })
-            .attr('r', 10);
+            .attr('r', 10)
+        ;
 
         currentNode
             .on("mouseover", (d) => {
-                this.optionsPanelValueService.setInfo( {
-                    "filename":d.f.name,
-                    "value": d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
-                    "sha":d.f.commitId,
-                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
-                } );
-                this.optionsPanel.ref.markForCheck();
 
-                this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
-                this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+                that.apiService.getMinMaxOfMetric( this.optionsPanelValueService.getQualityMetricSelectValue() )
+                    .subscribe(
+                        (callResult)=>{
+                            that.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                            that.normalizationMinValue = callResult.min_max_values[0].min;
+                        },
+                        (error)=>{
+                            console.log(error);
+                        },
+                        ()=>{
+                            this.optionsPanelValueService.setInfo( {
+                                "filename":d.f.name,
+                                "value": d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
+                                "sha":d.f.commitId,
+                                "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                            } );
+                            this.optionsPanel.ref.markForCheck();
 
+                            this.renderDashedGuideLineToXAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+                            this.renderDashedGuideLineToYAxis( new Date(d.c.datetime), this.getNormalizedValue( d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] ) );
+
+                            that.trendVisualizationWrapper
+                                .selectAll( ".module-view-node.sha" + d.f.commitId ).transition().duration(500).attr('r',20)
+                                .each(function(d){
+                                    let currentNode = d3Selection.select(this);
+                                    let currentY = currentNode.attr('cy');
+                                    let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
+                                    let currentQualityValue = currentNode.attr('data-qualityvalue');
+                                    let xScaleForNode = that.getCurrentXScale();
+
+                                    let tooltipContainer = that.trendVisualizationWrapper
+                                        .append('g')
+                                        .attr('class','module-view-node-tooltip')
+                                        .attr('transform', 'translate(' + (xScaleForNode( new Date(d.c.datetime) ) + 15 ) + ',' + currentY + ')' );
+
+                                    tooltipContainer
+                                        .append('rect')
+                                        .attr('width',250)
+                                        .attr('height',25)
+                                        .attr('fill','#eee');
+
+                                    tooltipContainer
+                                        .append('text')
+                                        .style('fill','black')
+                                        .attr('transform', 'translate(0,18)' )
+                                        .text( 'Module average: ' + parseFloat( currentQualityValue ).toFixed(2) + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+
+                                    that.fadeInD3Element( tooltipContainer );
+                                })
+
+
+                        });
             })
             .on("mouseout", ()=>{
                 this.removeDashedGuideLines();
+                d3Selection.selectAll( '.module-view-node-tooltip' ).remove();
+                d3Selection.selectAll( ".module-view-node" ).transition().duration(400).attr('r',10);
+
+                this.optionsPanelValueService.setInfo( {
+                    "filename":'-',
+                    "value": '-',
+                    "sha":'-',
+                    "time":'-'
+                } );
             });
     }
 
@@ -855,6 +1027,7 @@ export class TrendChartComponent implements OnInit {
             .attr("stroke-linecap", "round")
             .attr("stroke-width", 3)
             .attr("d", line)
+            .attr("pointer-events", "none")
             .attr("clip-path","url(#clipper)");
     }
 
@@ -863,7 +1036,7 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing commit classes
      */
     public fadeCommitViewToBackground(): void {
-        d3Selection.selectAll('.commit-view-node').transition().duration(700).style("opacity", 0.15);
+        d3Selection.selectAll('.commit-view-node').style("opacity", 0.15);
         d3Selection.selectAll('.commit-view-link').transition().duration(700).style("opacity", 0.15);
         d3Selection.selectAll('.commit-view-balloon-line').transition().duration(700).style("opacity", 0.15);
     }
@@ -873,8 +1046,10 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing file classes
      */
     public fadeFileViewToBackground(): void {
-            d3Selection.selectAll('.file-view-node').transition().duration(700).style("opacity", 0.15);
-            d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 0.15);
+        d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.08);
+        d3Selection.selectAll('.file-view-node').transition().duration(700).style("stroke-opacity", 0.12);
+        d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 0.08);
+
     }
 
     /**
@@ -890,8 +1065,9 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing file classes
      */
     public fadeFileViewToForeground(): void {
-        d3Selection.selectAll('.file-view-node').transition().duration(700).style("opacity", 1);
-        d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 1);
+         d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.3);
+         d3Selection.selectAll('.file-view-node').transition().duration(700).style("stroke-opacity", 1);
+         d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 1);
     }
 
 
@@ -1029,7 +1205,7 @@ export class TrendChartComponent implements OnInit {
      */
     public removeFileFromVisualization(): void {
         let filepath = this.optionsPanelValueService.getFileRemovedValue();
-        this.clearFileView( filepath );
+        this.clearFileView( filepath, null );
 
         return;
     }

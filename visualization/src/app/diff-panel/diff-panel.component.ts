@@ -14,7 +14,6 @@ export class DiffPanelComponent implements OnInit {
     }
 
     ngOnInit() {
-
     }
 
     public setLeftFileData( paraLeftFileData: any ) {
@@ -49,6 +48,30 @@ export class DiffPanelComponent implements OnInit {
 
     public toggleRightFileFixated() {
         this.diffPanelValueService.toggleRightFileFixated()
+    }
+
+    public getLeftValue() {
+        return this.diffPanelValueService.getLeftQualityValue();
+    }
+
+    public getRightValue() {
+        return this.diffPanelValueService.getRightQualityValue();
+    }
+
+    public getLeftLabel() {
+        return this.diffPanelValueService.getLeftQualityLabel();
+    }
+
+    public getRightLabel() {
+        return this.diffPanelValueService.getRightQualityLabel();
+    }
+
+    public getFileName() {
+        return this.diffPanelValueService.getFileName();
+    }
+
+    public getQualityColor() {
+        return this.diffPanelValueService.getQualityColor();
     }
 
 }

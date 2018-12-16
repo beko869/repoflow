@@ -42,7 +42,15 @@
 
     <app-modal-dialog #modal>
         <div class="app-modal-header">
-            Difference View
+            Difference View for File <strong>{{getFileName()}}</strong>
+            <div class="diff-modal-header-quality">
+                <div class="diff-modal-header-left">
+                    First selected revision: <span [style.color]="getQualityColor()">{{getLeftValue() + ' ' + getLeftLabel()}}</span>
+                </div>
+                <div class="diff-modal-header-right">
+                    Second selected revision: <span [style.color]="getQualityColor()">{{getRightValue() + ' ' +  getRightLabel()}}</span>
+                </div>
+            </div>
         </div>
         <div class="app-modal-body">
            <app-code-editor #codeEditor></app-code-editor>

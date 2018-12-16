@@ -1,16 +1,55 @@
 <div class="legend-holder">
-  <img height="20" src="assets/images/commit_edit.png"/>
   <div style="display:inline-block;vertical-align:top;">
-  <div class="legend-label">
-        Commits (size grows with amount of files added/modified)
+    <div class="legend-label">
+      <strong>LEGEND:</strong>
+    </div>
   </div>
+  <svg style="width:20px;height:20px">
+    <g>
+      <rect width="20" height="20" rx="5" ry="5" fill="grey"></rect>
+    </g>
+  </svg>
+  <div style="display:inline-block;vertical-align:top;">
+    <div class="legend-label">
+          <strong>COMMITS</strong>
+    </div>
   </div>
-  <img height="20" src="assets/images/file_edit.png"/>
-
+  <svg style="width:20px;height:20px;margin-left:12px">
+    <g>
+      <circle cx="10" cy="10" r="10" fill="grey"></circle>
+    </g>
+  </svg>
   <div style="display:inline-block;vertical-align: top;">
-
-  <div class="legend-label">
-        Files
+    <div class="legend-label">
+          <strong>FILES</strong>
+    </div>
   </div>
-  </div>
+  <div style="display:inline-block;vertical-align: top; margin-left:15px;">
+     <div style="display:inline-block;vertical-align: top;"
+          *ngFor="let commitQuality of this.getQualityMetricList()">
+           <div class="legend-label">
+             <div style="display:inline-block;width:20px;height:20px;margin-left:10px;"
+                  [style.border-radius]="'5px'"
+                  [style.background-color]="lookupArray[commitQuality.id]"
+             >
+             </div>
+             &nbsp;
+             <strong>{{commitQuality.text}}</strong>
+           </div>
+     </div>
+    <div style="display:inline-block;vertical-align: top;">
+      <div class="legend-label">
+        <fa [style.color]="'darkred'" [name]="'trash'" size="2"></fa>
+        &nbsp;
+        <strong>File Delete/Rename Event</strong>
+      </div>
+    </div>
+    <div style="display:inline-block;vertical-align: top;">
+      <div class="legend-label">
+        <fa [style.color]="'darkgreen'" [name]="'save'" size="2"></fa>
+        &nbsp;
+        <strong>File Added Event</strong>
+      </div>
+    </div>
+   </div>
 </div>

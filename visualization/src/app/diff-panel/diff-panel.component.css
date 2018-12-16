@@ -34,3 +34,27 @@ legend{
 .pointer-cursor {
     cursor: pointer;
 }
+
+.diff-modal-header-quality{
+    margin-top: 10px;
+    display:flex;
+
+    justify-content: center;
+    font-size:18px;
+}
+
+.diff-modal-header-left{
+    width:50%;
+    float:left;
+}
+
+.diff-modal-header-right{
+    width:50%;
+    float:right;
+
+    margin-left:82px;
+}
+
+.CodeMirror.cm-s-default{
+    height:800px;
+}

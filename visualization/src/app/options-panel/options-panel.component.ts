@@ -254,5 +254,12 @@ export class OptionsPanelComponent {
         this.clearFileViewEvent.emit();
     }
 
+    public setQualityColorList( paraQualityColorList: any ): void {
+        this.optionsPanelValueService.setQualityColorList( paraQualityColorList );
+    }
+
+    public getQualityColorByLabel( paraQualityLabel: any ): string {
+        return this.optionsPanelValueService.getQualityColorList()[ paraQualityLabel ];
+    }
 
 }

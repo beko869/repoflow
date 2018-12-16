@@ -21,6 +21,7 @@ export class OptionsPanelValuesService {
     private info: any;
     private qualityMetricList: string[];
     private moduleFileData: string[] = [];
+    private qualityColorList: any;
 
 
     public setIsFileInfo( paraValue: boolean ){
@@ -227,5 +228,13 @@ export class OptionsPanelValuesService {
         }
 
         return qualityName;
+    }
+
+    public setQualityColorList( paraQualityColorList ): void {
+        this.qualityColorList = paraQualityColorList;
+    }
+
+    public getQualityColorList(): any {
+        return this.qualityColorList;
     }
 }
