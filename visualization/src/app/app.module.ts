@@ -1,4 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Angular2FontawesomeModule } from 'angular2-fontawesome';
@@ -7,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { Select2Module } from "ng2-select2";
 import { HttpClientModule } from "@angular/common/http";
 import { DndModule } from "ng2-dnd";
+import { MatTabsModule } from '@angular/material/tabs';
 
 import { AppComponent } from './app.component';
 import { OptionsPanelComponent } from './options-panel/options-panel.component';
@@ -39,6 +41,8 @@ import { StatsPanelComponent } from './stats-panel/stats-panel.component';
     CodemirrorModule,
     FormsModule,
     Select2Module,
+    MatTabsModule,
+    BrowserAnimationsModule,
     DndModule.forRoot(),
     RouterModule.forRoot([
         {

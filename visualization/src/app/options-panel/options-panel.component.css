@@ -82,3 +82,7 @@ legend{
 .pointer-cursor {
     cursor: pointer;
 }
+
+::ng-deep .mat-tab-header-pagination {
+    display: none !important;
+}

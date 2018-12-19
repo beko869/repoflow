@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { trigger, transition, animate, style } from '@angular/animations';
 
+
 import {OptionsPanelValuesService} from "../shared/options-panel-values.service";
 
 @Component({

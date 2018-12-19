@@ -143,8 +143,8 @@ export class TrendChartComponent implements OnInit {
     public renderFileView( paraData: any, paraQuality?: string ): void {
 
         //this.clearFileView();
-        this.renderFileViewFileLinks( paraData["files"], paraQuality )
         this.renderFileViewNodes( paraData["files"], paraQuality );
+        this.renderFileViewFileLinks( paraData["files"], paraQuality )
     }
 
 
@@ -204,7 +204,7 @@ export class TrendChartComponent implements OnInit {
         else if( paraFileName != null && paraQualityName != null ){
             d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
             d3Selection.selectAll('.file-view-link.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
-            d3Selection.selectAll('.file-view-node.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
+            d3Selection.selectAll('.file-view-node-icon.' + paraFileName.split("/").join("").split(".").join("") + '.' + paraQualityName).remove();
         }
     }
 
@@ -378,6 +378,7 @@ export class TrendChartComponent implements OnInit {
      */
     public renderCommitViewNodes( paraCommitNodesData: any, paraQualityMetric: any, paraMinMaxValues: any ): void {
         let currentXScale = this.getCurrentXScale();
+        let that = this;
 
         this.apiService.getMinMaxOfMetric( paraQualityMetric )
             .subscribe(
@@ -411,6 +412,20 @@ export class TrendChartComponent implements OnInit {
                         .attr('style',(d)=>{ return ( (d[paraQualityMetric] ? 'display:block' : 'display:none' ) ) })
                         .attr('data-qualityidentifier', paraQualityMetric)
                         .attr('data-qualityvalue', (d)=>{ return d[paraQualityMetric] })
+                        .on('contextmenu',function(d){
+                            d3Selection.select('.context-menu-item').remove();
+                            that.contextMenu = that.getContextMenuForCommitNode( paraQualityMetric );
+                            let coords = d3Selection.mouse(this);
+
+                            that.contextMenu.attr('transform', 'translate(' + coords[0] + ',' + coords[1] + ')');
+                            that.contextMenu.style('display', 'block');
+                            that.contextMenu.datum(d);
+
+                            d3Selection.selectAll( '.commit-view-node-tooltip' ).remove();
+
+                            d3Selection.event.preventDefault();
+
+                        })
                         .on('click',(d)=>{
                             this.renderFilesOfCommit( d.id );
                             //d3Selection.selectAll('.commit-view-node').transition().duration(50).style("opacity", 0.15);
@@ -688,7 +703,7 @@ export class TrendChartComponent implements OnInit {
 
                         currentNode.on('contextmenu', function(d) {
                                 d3Selection.select('.context-menu-item').remove();
-                                that.contextMenu = that.getContextMenuForFileViewNode( d );
+                                that.contextMenu = that.getContextMenuForFileViewNode( d, qualityIdentifier );
                                 let coords = d3Selection.mouse(this);
 
                                 that.contextMenu.attr('transform', 'translate(' + coords[0] + ',' + coords[1] + ')');
@@ -870,7 +885,9 @@ export class TrendChartComponent implements OnInit {
                     this.trendVisualizationWrapper
                         .append('path')
                         .datum(fileLinkArray)
-                        .attr('class', (d)=>{ return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") } )
+                        .attr('class', (d)=>{
+                            return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") + ' ' + qualityIdentifier
+                        })
                         .attr("fill", "none")
                         .attr("stroke", (d)=>{
                             return this.fileColorLookupArray[d[0].name].color;
@@ -1217,7 +1234,7 @@ export class TrendChartComponent implements OnInit {
         return;
     }
 
-    public getContextMenuForFileViewNode( data: any ): any {
+    public getContextMenuForFileViewNode( data: any, paraQualityIdentifier: string ): any {
         let filename = data.f.name;
 
         let qualityList = this.optionsPanelValueService.getQualityMetricListForSelect();
@@ -1233,6 +1250,13 @@ export class TrendChartComponent implements OnInit {
                 }
             });
         }
+
+        menu.push({
+            title: 'Remove this file trend line (Metric: ' + this.qualityLabelLookupArray[paraQualityIdentifier] + ').',
+            action: () => {
+                this.clearFileView( filename, paraQualityIdentifier );
+            }
+        });
 
         /* build context menu */
         let m = this.trendVisualizationWrapper.append("g");
@@ -1275,6 +1299,71 @@ export class TrendChartComponent implements OnInit {
 
         return m;
     }
+
+    public getContextMenuForCommitNode( paraQualityIdentifier: string ): any {
+        let qualityList = this.optionsPanelValueService.getQualityMetricListForSelect();
+        let menu = [];
+
+        //start at 1 because of bitte wählen
+        for( let i = 1; i < qualityList.length; i++) {
+
+            menu.push({
+                title: 'Compare this commit quality trend to ' + qualityList[i].text,
+                action: () => {
+                    this.doCommitViewRequestAndRender( qualityList[i].id );
+                }
+            });
+        }
+
+        menu.push({
+            title: 'Remove this commit quality trend (Metric: ' + this.qualityLabelLookupArray[paraQualityIdentifier] + ').',
+            action: () => {
+                this.clearCommitView( paraQualityIdentifier );
+            }
+        });
+
+        /* build context menu */
+        let m = this.trendVisualizationWrapper.append("g");
+        m.style('display', 'none')
+            .attr('class', 'context-menu-item');
+
+
+        let r = m.append('rect')
+            .attr('height', menu.length * 25)
+            .style('fill', "#eee");
+
+        let t = m.selectAll('menu_item')
+            .data(menu)
+            .enter()
+            .append('g')
+            .attr('transform', function(d, i) {
+                return 'translate(' + 10 + ',' + ((i + 1) * 20) + ')';
+            })
+            .on('mouseover', function(d){
+                d3Selection.select(this).style('fill', 'steelblue');
+                d3Selection.select(this).style('cursor', 'pointer');
+            })
+            .on('mouseout', function(d){
+                d3Selection.select(this).style('fill', 'black');
+            })
+            .on('click', function(d,i){
+                d.action(d,i);
+            })
+            .append('text')
+            .text(function(d) {
+                return d.title;
+            });
+
+        let w = 0;
+        t.each(function(d){
+            let l = this.getComputedTextLength();
+            if (l > w) w = l;
+        });
+        r.attr('width', w + 20);
+
+        return m;
+    }
+
 
     public fadeInD3Element( paraElement: any ):void {
         paraElement

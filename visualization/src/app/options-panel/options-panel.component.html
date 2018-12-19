@@ -1,6 +1,21 @@
 <div class="filter-area">
+  <div class="search-input-group" style="margin-bottom:30px;">
+    <label style="text-align:center;">Set and display quality metric for your project</label>
+    <select2 [data]="getQualityMetricListForSelect()"
+             [options]="getSelectLayoutOptions()"
+             (valueChanged)="setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( $event.value );showCommitView()">
+    </select2>
+    <!--<div id="selected-commit-qualities-holder">
+      <div class="list-for-delete-panel"
+           *ngFor="let commitQuality of getCommitQualityList()">
+        {{commitQuality}}
+        <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
+      </div>
+    </div>-->
+  </div>
+
   <legend style="text-align:center;margin-top:10px;">
-    Select quality metric and files
+    Add/Delete files
     <fa (click)="qualityMetricAndFilesHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
   </legend>
   <app-modal-dialog class="help-modal" #qualityMetricAndFilesHelpModal>
@@ -16,20 +31,7 @@
       <button type="button" class="btn btn-default" (click)="qualityMetricAndFilesHelpModal.hide()">Close</button>
     </div>
   </app-modal-dialog>
-  <div class="search-input-group">
-    <label>Set quality metric for files</label>
-    <select2 [data]="getQualityMetricListForSelect()"
-             [options]="getSelectLayoutOptions()"
-             (valueChanged)="setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( $event.value )">
-    </select2>
-    <!--<div id="selected-commit-qualities-holder">
-      <div class="list-for-delete-panel"
-           *ngFor="let commitQuality of getCommitQualityList()">
-        {{commitQuality}}
-        <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
-      </div>
-    </div>-->
-  </div>
+
   <hr/>
   <div class="search-input-group">
     <label>Add file to visualization</label>
@@ -43,16 +45,37 @@
            *ngFor="let file of getSelectedFileList()"
            [style.color]="getFileColorByFileName(file)"
            dnd-draggable [dragEnabled]="true" [dragData]="file">
-              {{"..."+file.slice(-35)}}
-              <fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa>
+        {{"..."+file.slice(-35)}}
+        <fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa>
       </div>
     </div>
+
+    <mat-tab-group [disableRipple]="true">
+      <mat-tab label="Wrap files to modules">
+        <div class="search-input-group">
+          <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
+            <div class="module-file-dropzone" [hidden]="getModuleFileData().length > 0"><i>Drop files that you want to wrap in a module here!</i></div>
+            <div class="list-for-module-panel"
+                 *ngFor="let file of getModuleFileData()"
+                 [style.color]="getFileColorByFileName(file)">
+              {{"..."+file.slice(-35)}}
+              <fa (click)="removeFromModuleFileList(file)" [name]="'times'"></fa>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Compare files">
+        <app-diff-panel #diffPanel></app-diff-panel>
+      </mat-tab>
+    </mat-tab-group>
+
+
   </div>
 
-  <legend style="text-align:center;margin-top:30px;">
+  <!--<legend style="text-align:center;margin-top:30px;">
     Wrap selected files to modules
     <fa (click)="moduleWrapperHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
-  </legend>
+  </legend>-->
   <app-modal-dialog class="help-modal" #moduleWrapperHelpModal>
     <div class="app-modal-header">
       Help for wrapping selected files to modules
@@ -65,26 +88,15 @@
       <button type="button" class="btn btn-default" (click)="moduleWrapperHelpModal.hide()">Close</button>
     </div>
   </app-modal-dialog>
-  <div class="search-input-group">
-    <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
-      <div class="module-file-dropzone" [hidden]="getModuleFileData().length > 0"><i>Drop files that you want to wrap in a module here!</i></div>
-      <div class="list-for-module-panel"
-            *ngFor="let file of getModuleFileData()"
-            [style.color]="getFileColorByFileName(file)">
-            {{"..."+file.slice(-35)}}
-            <fa (click)="removeFromModuleFileList(file)" [name]="'times'"></fa>
-      </div>
-    </div>
-  </div>
+
   <!--<div class="search-input-group">
     <label>Set file quality metric</label>
     <select>
       <option>test</option>
     </select>
   </div>-->
-  <app-diff-panel #diffPanel></app-diff-panel>
 
-  <legend style="text-align:center;margin-top:30px;">
+  <!--<legend style="text-align:center;margin-top:30px;">
     Compare commit trends
     <fa (click)="compareCommitTrendsHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
   </legend>
@@ -113,7 +125,7 @@
         <fa (click)="removeFromSelectedCommitQualityList(commitQuality)" [name]="'times'"></fa>
       </div>
     </div>
-  </div>
+  </div>-->
 
   <legend style="text-align:center;margin-top:30px;">
     Customize View
