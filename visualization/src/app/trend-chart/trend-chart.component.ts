@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 
 import * as d3 from 'd3';
 import * as d3Selection from 'd3-selection';
@@ -15,6 +15,7 @@ import {DiffPanelValuesService} from "../shared/diff-panel-values.service";
 import {ApiService} from "../shared/api.service";
 import {D3Helper} from "../d3-helper/d3-helper";
 import {current} from "codelyzer/util/syntaxKind";
+import {OptionsPanelComponent} from "../options-panel/options-panel.component";
 
 
 @Component({
@@ -48,13 +49,20 @@ export class TrendChartComponent implements OnInit {
     private diffPanel: any;
     private contextMenu: any;
 
-    @ViewChild('optionsPanel') optionsPanel;
+
+    public optionsPanel : OptionsPanelComponent;
+
+    @ViewChild('optionsPanel') set ch(ch: OptionsPanelComponent){
+        this.optionsPanel = ch;
+        this.tcRef.detectChanges();
+    }
+
     @ViewChild('codeEditor') codeEditor;
     @ViewChild('trendContainer') trendContainer: ElementRef;
     @ViewChild('legendContainer') legendContainer;
 
 
-    constructor(private utility: UtilityService, private optionsPanelValueService: OptionsPanelValuesService, private diffPanelValueService: DiffPanelValuesService, private apiService: ApiService ) {
+    constructor(private utility: UtilityService, private optionsPanelValueService: OptionsPanelValuesService, private diffPanelValueService: DiffPanelValuesService, private apiService: ApiService, public tcRef:ChangeDetectorRef ) {
         this.isFileDetailViewVisible = false;
         this.margin = {top:0, right:0, bottom:20, left:0};
         this.xScaleZoomed = null;
@@ -114,13 +122,13 @@ export class TrendChartComponent implements OnInit {
     /**
      * requests file data and renders the basic file view
      */
-    public doFileViewRequestByFilePathAndRender( paraFilePath: string, paraQuality?: string ) {
+    public doFileViewRequestByFilePathAndRender( paraFilePath: string, paraQuality?: string, paraVisibility?: boolean ) {
         this.fadeCommitViewToBackground();
         this.fadeFileViewToForeground();
 
         this.apiService.getFileDataByFilePath( paraFilePath )
             .subscribe( (data)=>{
-                this.renderFileView( data, paraQuality );
+                this.renderFileView( data, paraQuality, paraVisibility );
             });
     }
 
@@ -131,8 +139,14 @@ export class TrendChartComponent implements OnInit {
      * @param paraCommitQuality string determining which commit quality gets rendered
      */
     public renderCommitView( paraData: any, paraCommitQuality: string ): void {
-        this.renderCommitViewNodes( paraData["commit-nodes"], paraCommitQuality, paraData[ 'min_max_values' ] );
-        this.renderCommitViewBalloonLines( paraData["commit-nodes"], paraCommitQuality, paraData[ 'min_max_values' ] );
+        if( paraCommitQuality != null ) {
+            this.renderCommitViewNodes( paraData["commit-nodes"], paraCommitQuality, paraData[ 'min_max_values' ] );
+            this.renderCommitViewBalloonLines( paraData["commit-nodes"], paraCommitQuality, paraData[ 'min_max_values' ] );
+        }
+        else {
+            this.clearCommitView();
+        }
+
     }
 
 
@@ -140,7 +154,7 @@ export class TrendChartComponent implements OnInit {
      * renders the file view with the given data array
      * @param paraData array containing files data
      */
-    public renderFileView( paraData: any, paraQuality?: string ): void {
+    public renderFileView( paraData: any, paraQuality?: string, paraVisibility?: boolean ): void {
 
         //this.clearFileView();
         this.renderFileViewNodes( paraData["files"], paraQuality );
@@ -586,8 +600,17 @@ export class TrendChartComponent implements OnInit {
             .subscribe( (data)=>{
                 for( let i=0;i<data.files.length; i++ )
                 {
-                    if( !this.optionsPanelValueService.getSelectedFileList().includes( data.files[i].f.name ) ){
-                        this.optionsPanelValueService.setFileSelectValue( data.files[i].f.name );
+                    let alreadyExisting = false;
+
+                    for( let j = 0; j<this.optionsPanelValueService.getSelectedFileList().length; j++ ){
+                        if( this.optionsPanelValueService.getSelectedFileList()[j].filename == data.files[i].f.name ){
+                            alreadyExisting = true;
+                            this.optionsPanelValueService.getSelectedFileList()[j].checked = true;
+                        }
+                    }
+
+                    if( !alreadyExisting ) {
+                        this.optionsPanelValueService.setFileSelectValue( { 'filename':data.files[i].f.name,'checked':true } );
                     }
                 }
                 this.optionsPanel.ref.markForCheck();
@@ -645,11 +668,18 @@ export class TrendChartComponent implements OnInit {
                             .attr('data-qualityidentifier', qualityIdentifier)
                             .attr('data-qualityvalue', (d)=>{ return d.f[ qualityIdentifier ] })
                             .style('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-                            .style('fill-opacity', 0.3 )
+                            .style('fill-opacity', 0.3)
                             .style('stroke',(d)=>{ return this.fileColorLookupArray[d.f.name].color })
                             .style('stroke-width', 2 )
-                            //.style('stroke-opacity',0.8)
+                            .style('stroke-opacity', 1 )
                             .attr('r', 12)
+                            .attr('visibility', (d)=>{
+                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ){
+                                    return 'default'; }
+                                else {
+                                    return 'hidden';
+                                }
+                            });
 
 
                         this.trendVisualizationWrapper.append('g').selectAll('text')
@@ -673,7 +703,14 @@ export class TrendChartComponent implements OnInit {
                             .attr('fill','darkred')
                             .attr('font-size', function(d) { return '17px'} )
                             .attr("pointer-events", "none")
-                            .attr('visibility', (d)=>{ return ( d.f.status == 'deleted' ? 'default' : 'hidden' ) })
+                            .attr('visibility', (d)=>{
+                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
+                                    return (d.f.status == 'deleted' ? 'default' : 'hidden');
+                                }
+                                else {
+                                    return 'hidden';
+                                }
+                            })
                             .text(function(d) { return '\uf1f8'});
 
 
@@ -698,7 +735,14 @@ export class TrendChartComponent implements OnInit {
                             .attr('fill','darkgreen')
                             .attr('font-size', function(d) { return '17px'} )
                             .attr("pointer-events", "none")
-                            .attr('visibility', (d)=>{ return ( d.f.status == 'added' ? 'default' : 'hidden' ) })
+                            .attr('visibility', (d)=>{
+                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
+                                    return (d.f.status == 'added' ? 'default' : 'hidden');
+                                }
+                                else {
+                                    return 'hidden';
+                                }
+                            })
                             .text(function(d) { return '\uf0c7'});
 
                         currentNode.on('contextmenu', function(d) {
@@ -829,8 +873,10 @@ export class TrendChartComponent implements OnInit {
                                     "time":'-'
                                 } );
                             });
+
                     });
 
+        this.fadeCommitViewToBackground();
 
 
     }
@@ -897,7 +943,15 @@ export class TrendChartComponent implements OnInit {
                         .attr("stroke-width", 3)
                         .attr("pointer-events", "none")
                         .attr("d", line)
-                        .attr("clip-path","url(#clipper)");
+                        .attr("clip-path","url(#clipper)")
+                        .attr('visibility', (d)=>{
+                            if( this.optionsPanelValueService.getVisibilityByFileName( d[0].name ) ){
+                                return 'default'; }
+                            else {
+                                return 'hidden';
+                            }
+                        });
+                    ;
                 });
     }
 
@@ -1063,8 +1117,7 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing file classes
      */
     public fadeFileViewToBackground(): void {
-        d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.08);
-        d3Selection.selectAll('.file-view-node').transition().duration(700).style("stroke-opacity", 0.12);
+        d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.08).style("stroke-opacity", 0.12);
         d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 0.08);
 
     }
@@ -1082,8 +1135,7 @@ export class TrendChartComponent implements OnInit {
      * clears the view from all elements containing file classes
      */
     public fadeFileViewToForeground(): void {
-         d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.3);
-         d3Selection.selectAll('.file-view-node').transition().duration(700).style("stroke-opacity", 1);
+         d3Selection.selectAll('.file-view-node').transition().duration(700).style("fill-opacity", 0.3).style("stroke-opacity", 1);
          d3Selection.selectAll('.file-view-link').transition().duration(700).style("opacity", 1);
     }
 
@@ -1124,11 +1176,11 @@ export class TrendChartComponent implements OnInit {
 
         let filepath = this.optionsPanelValueService.getFileSelectValue();
 
-        if( filepath == '' ){
+        if( filepath.filename == '' ){
             return;
         }
         else {
-            this.doFileViewRequestByFilePathAndRender( filepath );
+            this.doFileViewRequestByFilePathAndRender( filepath.filename );
         }
 
         return;
@@ -1143,12 +1195,13 @@ export class TrendChartComponent implements OnInit {
         let files = this.optionsPanelValueService.getSelectedFileList();
 
         for( let i=0; i<files.length; i++ ){
-            let filepath = files[i];
+            let filepath = files[i].filename;
+            let visibility = files[i].checked;
             if( filepath == '' ){
                 return;
             }
             else {
-                this.doFileViewRequestByFilePathAndRender( filepath );
+                this.doFileViewRequestByFilePathAndRender( filepath, undefined, visibility );
             }
         }
 
@@ -1235,6 +1288,8 @@ export class TrendChartComponent implements OnInit {
     }
 
     public getContextMenuForFileViewNode( data: any, paraQualityIdentifier: string ): any {
+
+        let that = this;
         let filename = data.f.name;
 
         let qualityList = this.optionsPanelValueService.getQualityMetricListForSelect();
@@ -1242,13 +1297,14 @@ export class TrendChartComponent implements OnInit {
 
         //start at 1 because of bitte wählen
         for( let i = 1; i < qualityList.length; i++) {
-
-            menu.push({
-                title: 'Compare this trend line to ' + qualityList[i].text,
-                action: () => {
-                    this.doFileViewRequestByFilePathAndRender( filename, qualityList[i].id );
-                }
-            });
+            if( paraQualityIdentifier != qualityList[i].id ) {
+                menu.push({
+                    title: 'Compare this trend line to ' + qualityList[i].text,
+                    action: () => {
+                        this.doFileViewRequestByFilePathAndRender(filename, qualityList[i].id);
+                    }
+                });
+            }
         }
 
         menu.push({
@@ -1306,13 +1362,14 @@ export class TrendChartComponent implements OnInit {
 
         //start at 1 because of bitte wählen
         for( let i = 1; i < qualityList.length; i++) {
-
-            menu.push({
-                title: 'Compare this commit quality trend to ' + qualityList[i].text,
-                action: () => {
-                    this.doCommitViewRequestAndRender( qualityList[i].id );
-                }
-            });
+            if( paraQualityIdentifier != qualityList[i].id ) {
+                menu.push({
+                    title: 'Compare this commit quality trend to ' + qualityList[i].text,
+                    action: () => {
+                        this.doCommitViewRequestAndRender(qualityList[i].id);
+                    }
+                });
+            }
         }
 
         menu.push({
@@ -1370,5 +1427,29 @@ export class TrendChartComponent implements OnInit {
             .attr('style','opacity:0')
             .transition().duration(500)
             .attr('style','opacity:1');
+    }
+
+    public showFile( paraFileName?:string ):void {
+        let fileName = paraFileName;
+
+        if( fileName == undefined ) {
+            fileName = this.optionsPanelValueService.getFileNameForFileTrigger();
+        }
+
+        d3Selection.selectAll('.file-view-node.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
+        d3Selection.selectAll('.file-view-link.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
+        d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
+    }
+
+    public hideFile( paraFileName?:string ):void {
+        let fileName = paraFileName;
+
+        if( fileName == undefined ) {
+            fileName = this.optionsPanelValueService.getFileNameForFileTrigger();
+        }
+
+        d3Selection.selectAll('.file-view-node.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'hidden');
+        d3Selection.selectAll('.file-view-link.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'hidden');
+        d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'hidden');
     }
 }

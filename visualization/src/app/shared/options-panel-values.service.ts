@@ -13,7 +13,7 @@ export class OptionsPanelValuesService {
     private moduleDataRemoveValue: string;
     private fileList: string[];
     private fileColorList: any;
-    private selectedFileList: string[] = [];
+    private selectedFileList: any[] = [];
     private selectedCommitQualityList: string[] = [];
     private qualityMetricSelectValueForCompare: string[] = [];
     private qualityMetricSelectValue: string;
@@ -22,6 +22,7 @@ export class OptionsPanelValuesService {
     private qualityMetricList: string[];
     private moduleFileData: string[] = [];
     private qualityColorList: any;
+    private fileNameForFileTrigger: string;
 
 
     public setIsFileInfo( paraValue: boolean ){
@@ -45,7 +46,7 @@ export class OptionsPanelValuesService {
      * sets the selected file value from the options panel component file dropdown
      * @param {string} paraValue
      */
-    public setFileSelectValue( paraValue: string ){
+    public setFileSelectValue( paraValue: any ){
         this.fileSelectValue = paraValue;
         this.selectedFileList.push( paraValue );
     }
@@ -67,7 +68,7 @@ export class OptionsPanelValuesService {
      * gets the selected file value from the options panel component file dropdown
      * @returns {string}
      */
-    public getFileSelectValue():string {
+    public getFileSelectValue():any {
         return this.fileSelectValue;
     }
 
@@ -161,7 +162,7 @@ export class OptionsPanelValuesService {
      * returns a list of currently selected Files
      * @returns {string[]}
      */
-    public getSelectedFileList(): string[] {
+    public getSelectedFileList(): any[] {
         return this.selectedFileList;
     }
 
@@ -185,7 +186,7 @@ export class OptionsPanelValuesService {
         this.fileRemoveValue = paraValueToBeRemoved;
 
         for (let i=this.selectedFileList.length-1; i>=0; i--) {
-            if (this.selectedFileList[i] === paraValueToBeRemoved) {
+            if (this.selectedFileList[i].filename === paraValueToBeRemoved) {
                 this.selectedFileList.splice(i, 1);
             }
         }
@@ -236,5 +237,29 @@ export class OptionsPanelValuesService {
 
     public getQualityColorList(): any {
         return this.qualityColorList;
+    }
+
+    public getFileNameForFileTrigger(): any {
+        return this.fileNameForFileTrigger;
+    }
+
+    public setFileNameForFileTrigger( paraFileName:any ) {
+        this.fileNameForFileTrigger = paraFileName;
+    }
+
+    public triggerCheckedFlagInSelectedFileList( paraFileName:any ) {
+        for( let i=0; i<this.selectedFileList.length; i++ ) {
+            if( this.selectedFileList[i].filename == paraFileName ){
+                this.selectedFileList[i].checked = !this.selectedFileList[i].checked;
+            }
+        }
+    }
+
+    public getVisibilityByFileName( paraFileName:any ) {
+        for( let i=0; i<this.selectedFileList.length; i++ ) {
+            if( this.selectedFileList[i].filename == paraFileName ){
+                return this.selectedFileList[i].checked;
+            }
+        }
     }
 }

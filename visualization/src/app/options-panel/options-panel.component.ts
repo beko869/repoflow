@@ -1,11 +1,12 @@
 import {
     ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter,
-    Output, ViewChild
+    Output, ViewChild, Input, ElementRef
 } from '@angular/core';
 import { trigger, transition, animate, style } from '@angular/animations';
 
 
 import {OptionsPanelValuesService} from "../shared/options-panel-values.service";
+import {DiffPanelComponent} from "../diff-panel/diff-panel.component";
 
 @Component({
     selector: 'app-options-panel',
@@ -44,12 +45,22 @@ export class OptionsPanelComponent {
     @Output() fadeCommitViewEvent = new EventEmitter<string>();
     @Output() showFileAndCommitViewsEvent = new EventEmitter<string>();
     @Output() removeFileFromModuleListEvent = new EventEmitter<string>();
+    @Output() hideFileEvent = new EventEmitter<string>();
+    @Output() showFileEvent = new EventEmitter<string>();
     private selectOptions: any;
 
-    @ViewChild('diffPanel') diffPanel;
+    @Input() selectedIndex: number | null;
 
-    constructor(private optionsPanelValueService:OptionsPanelValuesService, private ref:ChangeDetectorRef ) {
+    public diffPanel : DiffPanelComponent;
+
+    @ViewChild('diffPanel') set ch(ch: DiffPanelComponent){
+        this.diffPanel = ch;
+        this.ref.detectChanges();
+    }
+
+    constructor(private optionsPanelValueService:OptionsPanelValuesService, public ref:ChangeDetectorRef ) {
         this.selectOptions = {"width":"100%"}
+        this.selectedIndex = 0;
     }
 
     public getDiffPanel(): any {
@@ -123,7 +134,7 @@ export class OptionsPanelComponent {
      * uses the optionsPanelValueService to return the list of selected files
      * @returns {string[]}
      */
-    public getSelectedFileList(): string[] {
+    public getSelectedFileList(): any[] {
         return this.optionsPanelValueService.getSelectedFileList();
     }
 
@@ -159,7 +170,7 @@ export class OptionsPanelComponent {
     public setFileSelectValueAndEmitAddFileToVisualizationEvent( paraOption: any ): void {
         //TODO: make better check if option is placeholder, check for 0 value or similar
         if( paraOption != "--- choose file ---" ) {
-            this.optionsPanelValueService.setFileSelectValue(paraOption);
+            this.optionsPanelValueService.setFileSelectValue({'filename':paraOption,'checked':true});
             this.addFileToVisualizationEvent.emit();
             this.ref.markForCheck();
         }
@@ -168,6 +179,12 @@ export class OptionsPanelComponent {
     public setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( paraValue: string ): void {
         if( paraValue != '0' ) {
             this.optionsPanelValueService.setQualityMetricSelectValue( paraValue );
+            this.qualityMetricChangedEvent.emit();
+            this.ref.markForCheck();
+        }
+
+        if( paraValue == '0' ){
+            this.optionsPanelValueService.setQualityMetricSelectValue( null );
             this.qualityMetricChangedEvent.emit();
             this.ref.markForCheck();
         }
@@ -219,7 +236,7 @@ export class OptionsPanelComponent {
 
     public removeFromModuleFileList( paraFile ): void {
         this.optionsPanelValueService.removeFromModuleFileData( paraFile );
-        this.optionsPanelValueService.setFileSelectValue( paraFile );
+        this.optionsPanelValueService.setFileSelectValue( { 'filename':paraFile,'checked':true } );
         this.removeFileFromModuleListEvent.emit();
         this.ref.markForCheck();
     }
@@ -261,6 +278,22 @@ export class OptionsPanelComponent {
 
     public getQualityColorByLabel( paraQualityLabel: any ): string {
         return this.optionsPanelValueService.getQualityColorList()[ paraQualityLabel ];
+    }
+
+    public getSelectedQualityMetrc(): any {
+        return this.optionsPanelValueService.getQualityMetricSelectValue();
+    }
+
+    public triggerFileVisibility( paraEvent:any, paraFile:any ): void {
+        this.optionsPanelValueService.setFileNameForFileTrigger( paraFile.filename );
+        this.optionsPanelValueService.triggerCheckedFlagInSelectedFileList( paraFile.filename );
+
+        if (paraEvent.target.checked) {
+            this.showFileEvent.emit();
+        }  else {
+            this.hideFileEvent.emit();
+        }
+
     }
 
 }

@@ -51,3 +51,12 @@ nav .nav-label{
 .CodeMirror-merge, .CodeMirror-merge .CodeMirror {
     height: 700px !important;
 }
+
+.mat-tab-label-active{
+    border-bottom:solid 2px #0e83cd !important;
+}
+
+.mat-tab-label{
+    border-bottom:solid 2px white;
+    min-width:50% !important;
+}

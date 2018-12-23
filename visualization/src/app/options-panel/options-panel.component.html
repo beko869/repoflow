@@ -1,5 +1,5 @@
 <div class="filter-area">
-  <div class="search-input-group" style="margin-bottom:30px;">
+  <div class="search-input-group" style="margin-bottom:10px;">
     <label style="text-align:center;">Set and display quality metric for your project</label>
     <select2 [data]="getQualityMetricListForSelect()"
              [options]="getSelectLayoutOptions()"
@@ -13,8 +13,17 @@
       </div>
     </div>-->
   </div>
+  <div class="search-input-group" style="margin-bottom:30px;">
+    <div class="button" (click)="showCommitView()">Show commits only</div>
+    <div class="button" (click)="showFileView()">Show files only</div>
+    <div class="button" (click)="showFileAndCommmitViews()">Show commits and files</div>
+    <div></div>
+    <div class="button" (click)="fadeFileView()">Fade files</div>
+    <div class="button" (click)="fadeCommitView()">Fade commits</div>
+    <!--<div class="button" (click)="clearCommmitView()">Clear commits</div>-->
+  </div>
 
-  <legend style="text-align:center;margin-top:10px;">
+  <legend style="text-align:center;margin-top:10px;" [ngStyle]="{'visibility':getSelectedQualityMetrc() != null ? 'visible' : 'hidden'}">
     Add/Delete files
     <fa (click)="qualityMetricAndFilesHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
   </legend>
@@ -32,8 +41,7 @@
     </div>
   </app-modal-dialog>
 
-  <hr/>
-  <div class="search-input-group">
+  <div class="search-input-group" [ngStyle]="{'visibility':getSelectedQualityMetrc() != null ? 'visible' : 'hidden'}">
     <label>Add file to visualization</label>
     <select2 [data]="getFileListForSelect()"
              [options]="getSelectLayoutOptions()"
@@ -43,14 +51,18 @@
     <div id="selected-files-holder">
       <div class="list-for-delete-panel"
            *ngFor="let file of getSelectedFileList()"
-           [style.color]="getFileColorByFileName(file)"
-           dnd-draggable [dragEnabled]="true" [dragData]="file">
-        {{"..."+file.slice(-35)}}
-        <fa (click)="removeFromSelectedFileList(file)" [name]="'times'"></fa>
+           [style.color]="getFileColorByFileName(file.filename)"
+           dnd-draggable [dragEnabled]="true" [dragData]="file.filename">
+        <input (change)="triggerFileVisibility($event,file)" type="checkbox" [checked]="file.checked ? 'checked' : ''" style="cursor:pointer"/>
+        {{"..."+file.filename.slice(-35)}}
+        <fa (click)="removeFromSelectedFileList(file.filename)" [name]="'times'"></fa>
       </div>
     </div>
 
-    <mat-tab-group [disableRipple]="true">
+    <mat-tab-group [disableRipple]="true" [selectedIndex]="selectedIndex">
+      <mat-tab label="Compare file versions">
+        <app-diff-panel #diffPanel></app-diff-panel>
+      </mat-tab>
       <mat-tab label="Wrap files to modules">
         <div class="search-input-group">
           <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
@@ -64,12 +76,7 @@
           </div>
         </div>
       </mat-tab>
-      <mat-tab label="Compare files">
-        <app-diff-panel #diffPanel></app-diff-panel>
-      </mat-tab>
     </mat-tab-group>
-
-
   </div>
 
   <!--<legend style="text-align:center;margin-top:30px;">
@@ -127,7 +134,7 @@
     </div>
   </div>-->
 
-  <legend style="text-align:center;margin-top:30px;">
+  <!--<legend style="text-align:center;margin-top:30px;">
     Customize View
     <fa (click)="customizeViewHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
   </legend>
@@ -146,15 +153,7 @@
       <button type="button" class="btn btn-default" (click)="customizeViewHelpModal.hide()">Close</button>
     </div>
   </app-modal-dialog>
-  <div class="search-input-group">
-    <div class="button" (click)="showCommitView()">Show all commits</div>
-    <div class="button" (click)="showFileView()">Show all files</div>
-    <div class="button" (click)="showFileAndCommmitViews()">Show commits and files</div>
-    <div></div>
-    <div class="button" (click)="fadeFileView()">Fade files</div>
-    <div class="button" (click)="fadeCommitView()">Fade commits</div>
-    <div class="button" (click)="clearCommmitView()">Clear commits</div>
-  </div>
+-->
   <!--<div class="search-input-group">
     <div class="button" (click)="showFileDetailView()">Show File Details</div>
   </div>-->
