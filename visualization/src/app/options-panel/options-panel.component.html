@@ -24,17 +24,21 @@
   </div>
 
   <legend style="text-align:center;margin-top:10px;" [ngStyle]="{'visibility':getSelectedQualityMetrc() != null ? 'visible' : 'hidden'}">
-    Add/Delete files
+    File and Module Options
     <fa (click)="qualityMetricAndFilesHelpModal.show()" [name]="'question'" class="pointer-cursor"></fa>
   </legend>
   <app-modal-dialog class="help-modal" #qualityMetricAndFilesHelpModal>
     <div class="app-modal-header">
-      Help for selecting quality metric and files
+      <h3>Help for selecting quality metric and files</h3>
     </div>
     <div class="app-modal-body">
-      Select the quality of the files you want to inspect, and then choose a file from the dropdown.<br/>
-      You can visualize the quality of all commits by clicking 'Show all commits' on the bottom of this panel.<br/>
-      If you visualized quality of commits, you can click on a commit node to display all files associated to this commit.
+      Selecting a file from the <strong>'Add file to visualization'</strong> dropdown visualizes the file in the trend area and adds it
+      to the file list below the dropdown.<br/><br/>
+      The tab <strong>'Compare file versions'</strong> allows you to compare file versions by clicking on a file node in the trend area.
+      After that you have to click 'Fixate revision of first file'
+      and choose a second file in the trend area. Clicking 'Show File Difference View' opens a diff view of the two selected file versions.<br/><br/>
+      The tab <strong>'Wrap files to modules'</strong> allows to drag and drop files from the selected file list into an
+      area where
     </div>
     <div class="app-modal-footer">
       <button type="button" class="btn btn-default" (click)="qualityMetricAndFilesHelpModal.hide()">Close</button>

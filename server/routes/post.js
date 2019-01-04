@@ -16,6 +16,36 @@ router.get('/', (req, res, next)=>{
     res.send('giving me parameters you must!');
 });
 
+router.put('/test', (req,res,next)=>{
+    console.log('test');
+    nodegitKit.open('C:/Users/benja/Desktop/test/.git')
+        .then((repo) => {
+            console.log(repo);
+
+            nodegit.Commit.lookup(repo, 'a48052fbafa49e212ff9191bb95fc5df62f3c15b')
+                .then((commit) => {
+                    commit.getEntry('raphael.js')
+                        .then((entry) => {
+                            console.log(entry);
+                            entry.getBlob().then((blob) => {
+                                console.log(String(blob));
+
+                                arangoDatabaseConnection.query(
+                                    `UPDATE  
+                                                                @key
+                                                             WITH {
+                                                                fileContent: @fileContent}
+                                                             IN 
+                                                                file`, {
+                                        key: '8798718',
+                                        fileContent: String(blob)
+                                    });
+                                //}
+                            });
+                        });
+                });
+        });
+});
 
 /* PUT (for idempotence) repository data in db. */
 router.put('/database', (req, res, next)=>{
@@ -102,6 +132,7 @@ router.put('/database', (req, res, next)=>{
                                        commitId:@sha,
                                        status:@status,
                                        hunks:@hunks,
+                                       isUpdatedWithQualityMetrics:0,
                                        fileContent:@fileContent,
                                        quality_metric_1:@quality_metric_1,
                                        quality_metric_2:@quality_metric_2,
@@ -172,40 +203,42 @@ router.put('/database', (req, res, next)=>{
                                     return Promise.props( values );
                                 });
 
-                            }).then( ( colorUpdateResult ) => {
+                            }).then( async( colorUpdateResult ) => {
                                 //update file entries with file content
-                                return arangoDatabaseConnection.query( "FOR f IN file RETURN f" )
-                                    .then( (queryResult)=>{
-                                        let fileResult = queryResult._result;
-                                        let fileUpdatePromises = [];
+                                let fileUpdatePromises = [];
 
+                                let cursor = await arangoDatabaseConnection.query( "FOR f IN file RETURN f" );
+                                let fileResult = await cursor.all();
+
+                                nodegit.Repository.open( req.body.repo_directory )
+                                    .then(function(repo) {
                                         for( let i=0;i<fileResult.length;i++ ) {
-                                            nodegit.Repository.open( req.body.repo_directory )
-                                                .then(function(repo) {
+                                            nodegit.Commit.lookup(repo, fileResult[i].commitId)
+                                                .then((commit) => {
 
-                                                    nodegit.Commit.lookup(repo, fileResult[i].commitId)
-                                                        .then((commit) => {
-
-                                                            commit.getEntry(fileResult[i].name)
-                                                                .then((entry) => {
-                                                                    entry.getBlob().then((blob) => {
-                                                                        fileUpdatePromises.push(arangoDatabaseConnection.query(
-                                                                            `UPDATE  
-                                                                @key
-                                                             WITH {
-                                                                fileContent: @fileContent}
-                                                             IN 
-                                                                file`, {
-                                                                                key: fileResult[i]._key,
-                                                                                fileContent: String(blob)
-                                                                            }));
-                                                                        //}
-                                                                    });
-                                                                });
+                                                    commit.getEntry(fileResult[i].name)
+                                                        .then((entry) => {
+                                                            entry.getBlob().then((blob) => {
+                                                                fileUpdatePromises.push(arangoDatabaseConnection.query(
+                                                                    `UPDATE  
+                                                        @key
+                                                     WITH {
+                                                        fileContent: @fileContent}
+                                                     IN 
+                                                        file`, {
+                                                                        key: fileResult[i]._key,
+                                                                        fileContent: String(blob)
+                                                                    }));
+                                                                //}
+                                                            });
                                                         });
                                                 });
                                         }
-                                    })
+                                });
+
+                                return Promise.map( fileUpdatePromises, ( values )=>{
+                                    return Promise.props( values );
+                                });
                             }).then( () => {
                                 res.send( {status:200, message:"Database created!"} );
                             } );
@@ -306,7 +339,5 @@ router.put('/quality', (req,res,next)=>{
         }
     }
 });
-
-
 
 module.exports = router;

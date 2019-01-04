@@ -4,11 +4,11 @@ const colorScheme = require('./colorScheme');
 let helper = {};
 
 //returns promise
-helper.selectSHAFileArray = function selectSHAFileArray() {
-    return arangoDatabaseConnection.query("FOR f IN file RETURN  {_key:f._key, fileContent:f.fileContent, name:f.name, commitId:f.commitId}")
-        .then( (values)=>{
-            return values._result;
-        } );
+helper.selectSHAFileArray = async function selectSHAFileArray() {
+
+    const cursor = await arangoDatabaseConnection.query("FOR f IN file RETURN  {_key:f._key, fileContent:f.fileContent, name:f.name, commitId:f.commitId}", {}, {count: true});
+    const result = await cursor.all();
+    return result;
 };
 
 helper.selectCommitsForUpdateArray = function selectCommitsForUpdateArray() {

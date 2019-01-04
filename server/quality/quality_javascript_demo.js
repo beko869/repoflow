@@ -45,7 +45,8 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                             'complexity': cyclomaticComplexity,
                             'lines_of_code': sloc(fileArray[i].fileContent, 'js').total,
                             'parameters': parameters,
-                            'statements' : statements
+                            'statements' : statements,
+                            'isUpdatedWithQualityMetrics':1
                         }
                     );
                 }

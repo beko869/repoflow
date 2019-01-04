@@ -1,4 +1,5 @@
 const request = require('request');
+const syncRequest = require('then-request');
 const config = require( '../config.js' );
 
 /**
@@ -11,7 +12,7 @@ const cloneRepository = (paraRepositoryURL, paraRepositoryDirectory) => {
     let options = {
         hostname: config.apiUrl,
         port: config.apiPort,
-        path: '/read/clone'
+        path: '/get/clone'
     };
 
     return new Promise( (resolve,reject)=>{
@@ -49,6 +50,31 @@ const createDatabase = (paraRepositoryDirectory) => {
 
     return new Promise( (resolve,reject)=>{
         request(options, (err, response, body) => {
+            if( err == null ) {
+                resolve( JSON.parse( body ) );
+            } else {
+                reject(err);
+            }
+        });
+    });
+};
+
+
+const fixFileContentBug = (paraRepositoryDirectory) => {
+    let headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    let fileContentSecondIterationOptions = {
+        method: 'PUT',
+        uri: config.apiUrl + ":" + config.apiPort + '/post/fixFileContentBug',
+        headers: headers,
+        form: { 'repo_directory':paraRepositoryDirectory }
+    };
+
+    return new Promise( (resolve,reject)=>{
+        request(fileContentSecondIterationOptions, (err, response, body) => {
             if( err == null ) {
                 resolve( JSON.parse( body ) );
             } else {
@@ -113,3 +139,4 @@ module.exports.cloneRepository = cloneRepository;
 module.exports.createDatabase = createDatabase;
 module.exports.clearDatabase = clearDatabase;
 module.exports.demoDatabase = demoDatabase;
+module.exports.fixFileContentBug = fixFileContentBug;

@@ -32,16 +32,13 @@ const run = async () => {
     const answers = await askQuestions();
     const {REPOSITORY_DIRECTORY} = answers;
 
-    api.createDatabase( REPOSITORY_DIRECTORY )
-        .then( (result) => {
-            if( result.status == 200 ) {
-                success();
-            } else {
-                error();
-            }
-        }, ()=>{
-            error();
-        });
+    let createResult = await api.createDatabase( REPOSITORY_DIRECTORY );
+
+    if( createResult.status == 200 ){
+        success();
+    } else {
+        error();
+    }
 };
 
 module.exports.run = run;

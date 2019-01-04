@@ -27,7 +27,6 @@ export class LegendComponent implements OnInit {
   }
 
   public setLookupArray( paraArray:any ) : any {
-      console.log(paraArray);
       return this.lookupArray = paraArray;
   }
 

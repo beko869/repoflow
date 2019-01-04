@@ -201,9 +201,8 @@ export class TrendChartComponent implements OnInit {
     /**
      * clears the view from all elements containing file classes
      */
-    public clearFileView( paraFileName:string = null, paraQualityName:string = null ): void {
+    public clearFileView( paraFileName:string = null, paraQualityName:string = null, paraIgnoreCommitForegroundFading = false ): void {
         this.clearFileDetailView();
-        this.fadeCommitViewToForeGround();
 
         if( paraFileName === null ) {
             d3Selection.selectAll('.file-view-node').remove();
@@ -357,8 +356,8 @@ export class TrendChartComponent implements OnInit {
                 this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
 
                 const line = d3Shape.line()
-                    .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ) })
-                    .y((d)=>{ return this.yScale( d[ 'y' ] ) })
+                    .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ? d[ 'x' ] : 0 ) })
+                    .y((d)=>{ return this.yScale( d[ 'y' ] ? d[ 'y' ] :  0 ) })
                     .curve(d3Shape.curveMonotoneX);
 
                 //scale file stuff to zoom scale
@@ -662,7 +661,12 @@ export class TrendChartComponent implements OnInit {
                                 if( d.f.status != 'deleted' ){
                                     qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
                                 }
-                                return this.yScale( qualityValue );
+
+                                if( qualityValue ){
+                                    return this.yScale( qualityValue );
+                                } else {
+                                    return this.yScale( 0 );
+                                }
 
                             })
                             .attr('data-qualityidentifier', qualityIdentifier)
@@ -711,6 +715,9 @@ export class TrendChartComponent implements OnInit {
                                     return 'hidden';
                                 }
                             })
+                            .attr('data-status', (d)=>{
+                                return 'deleted';
+                            })
                             .text(function(d) { return '\uf1f8'});
 
 
@@ -742,6 +749,9 @@ export class TrendChartComponent implements OnInit {
                                 else {
                                     return 'hidden';
                                 }
+                            })
+                            .attr('data-status', (d)=>{
+                                return 'added';
                             })
                             .text(function(d) { return '\uf0c7'});
 
@@ -906,8 +916,14 @@ export class TrendChartComponent implements OnInit {
                 ()=>{
                     //d3 line generator
                     const line = d3Shape.line()
-                        .x((d)=>{ return currentXScale( d[ 'x' ] ) })
-                        .y((d)=>{ return this.yScale( d[ 'y' ] ) })
+                        .x((d)=>{ console.log(d['x']);
+                            let xCoord = d[ 'x' ] ? d[ 'x' ] : 0;
+                            return currentXScale( xCoord )
+                        })
+                        .y((d)=>{ console.log(d['y']);
+                            let yCoord = d[ 'y' ] ? d[ 'y' ] : 0;
+                            return this.yScale( yCoord );
+                        })
                         .curve(d3Shape.curveMonotoneX);
 
                     let fileLinkArray = [];
@@ -1438,7 +1454,25 @@ export class TrendChartComponent implements OnInit {
 
         d3Selection.selectAll('.file-view-node.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
         d3Selection.selectAll('.file-view-link.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
-        d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
+        d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") + '.deleted' ).transition().duration(700).attr("visibility", function(d){
+            let nodeIcon = d3Selection.select(this);
+            console.log(nodeIcon.attr('data-status'));
+            if( nodeIcon.attr('data-status') == 'deleted' ){
+                return 'default'
+            } else {
+                return 'hidden';
+            }
+        });
+        d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") + '.added' ).transition().duration(700).attr("visibility", function(d){
+            let nodeIcon = d3Selection.select(this);
+            console.log(nodeIcon.attr('data-status'));
+
+            if( nodeIcon.attr('data-status') == 'added' ){
+                return 'default'
+            } else {
+                return 'hidden';
+            }
+        });
     }
 
     public hideFile( paraFileName?:string ):void {
