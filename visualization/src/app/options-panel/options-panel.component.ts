@@ -53,6 +53,12 @@ export class OptionsPanelComponent {
 
     public diffPanel : DiffPanelComponent;
 
+    public showCommitButtonActive = false;
+    public showFileButtonActive = false;
+    public fadeCommitButtonActive = false;
+    public fadeFileButtonActive = false;
+    public showFileAndCommitButtonActive = false;
+
     @ViewChild('diffPanel') set ch(ch: DiffPanelComponent){
         this.diffPanel = ch;
         this.ref.detectChanges();
@@ -174,20 +180,28 @@ export class OptionsPanelComponent {
             this.addFileToVisualizationEvent.emit();
             this.ref.markForCheck();
         }
+
+        this.triggerButtonVisibility( false, false, false, false, true );
+
     }
 
     public setQualityMetricSelectValueAndEmitQualityMetricChangedEvent( paraValue: string ): void {
+
         if( paraValue != '0' ) {
+            this.triggerButtonVisibility( false, false, false, false, true );
             this.optionsPanelValueService.setQualityMetricSelectValue( paraValue );
             this.qualityMetricChangedEvent.emit();
-            this.ref.markForCheck();
         }
 
         if( paraValue == '0' ){
+            this.triggerButtonVisibility( false, false, false, false, true );
             this.optionsPanelValueService.setQualityMetricSelectValue( null );
             this.qualityMetricChangedEvent.emit();
-            this.ref.markForCheck();
         }
+
+        this.triggerButtonVisibility( false, false, false, false, true );
+        this.ref.markForCheck();
+
     }
 
     public setQualityMetricSelectValueForCompare( paraValue: string ): void {
@@ -206,11 +220,31 @@ export class OptionsPanelComponent {
         return this.selectOptions;
     }
 
-    public showCommitView(): void {
+    public triggerButtonVisibility( paraShowCommitButtonActive, paraShowFileAndCommitButtonActive, paraShowFileButtonActive,
+                                    paraFadeFileButtonActive, paraFadeCommitButtonActive )
+    {
+        this.showCommitButtonActive = paraShowCommitButtonActive;
+        this.showFileAndCommitButtonActive = paraShowFileAndCommitButtonActive;
+        this.showFileButtonActive = paraShowFileButtonActive;
+        this.fadeFileButtonActive = paraFadeFileButtonActive;
+        this.fadeCommitButtonActive = paraFadeCommitButtonActive;
+    }
+
+    public showCommitView( paraTriggerCommitButtonVisibility = true ): void {
         this.clearFileDetailView();
         this.clearFileView();
         this.addSelectedCommitQualityListToVisualizationEvent.emit();
         this.ref.markForCheck();
+
+        if( this.getSelectedFileList().length > 0 ){
+            this.triggerButtonVisibility( false,false,false,false,true )
+
+        }
+        else
+        {
+            this.triggerButtonVisibility( paraTriggerCommitButtonVisibility,false,false,false,false )
+        }
+
     }
 
     public showFileView(): void {
@@ -218,6 +252,9 @@ export class OptionsPanelComponent {
         this.clearCommmitView();
         this.addSelectedFileListToVisualizationEvent.emit();
         this.ref.markForCheck();
+
+        this.triggerButtonVisibility( false,false,true,false,false )
+
     }
 
     public showFileDetailView(): void {
@@ -248,16 +285,24 @@ export class OptionsPanelComponent {
     public showFileAndCommmitViews(): void {
         this.showFileAndCommitViewsEvent.emit();
         this.ref.markForCheck();
+
+        this.triggerButtonVisibility( false,true,false,false,false )
+
     }
 
     public fadeFileView(): void {
         this.fadeFileViewEvent.emit();
         this.ref.markForCheck();
+
+        this.triggerButtonVisibility( false,false,false,true,false )
+
     }
 
     public fadeCommitView(): void {
         this.fadeCommitViewEvent.emit();
         this.ref.markForCheck();
+
+        this.triggerButtonVisibility( false,false,false,false,true )
     }
 
     public clearFileDetailView(): void {
@@ -294,6 +339,10 @@ export class OptionsPanelComponent {
             this.hideFileEvent.emit();
         }
 
+    }
+
+    public toggleYAxisZoom(): void {
+        this.optionsPanelValueService.setYAxisZoom( !this.optionsPanelValueService.getYAxisZoom() );
     }
 
 }

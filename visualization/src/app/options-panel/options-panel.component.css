@@ -87,4 +87,8 @@ legend{
     display: none !important;
 }
 
+.visibilityButtonActive {
+    background-color: gray;
+}
+
 

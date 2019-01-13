@@ -1,5 +1,8 @@
 const jshint    = require('jshint');
 const sloc      = require('sloc');
+const fs        = require('fs');
+const escomplex = require('escomplex');
+
 
 //TODO: Demonstration - this would be the logic in the endpoint (instead of select shaFileArray and updateQuality functions
 //TODO: it would make use of the api endpoints) that is calling the repoflow service
@@ -23,13 +26,21 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
         for( let i=0; i<fileArray.length; i++ ) {
             let fileType = fileArray[i].name.slice(-3);
 
+        //&& fileArray[i].name != 'frontend/src/assets/diff-match-patch-without-exports/diff-match-patch/test/index.js'
+
             if( fileType == '.js' ) {
                 if( fileArray[i].fileContent != '' ) {
+
+                    //const resultEscomplex = escomplex.analyse(fileArray[i].fileContent);
+                    //console.log(result.aggregate);
+
+
                     jshint.JSHINT(fileArray[i].fileContent.split('\n'), {undef: true, esversion: 6}, {foo: false});
                     let qualityData = jshint.JSHINT.data();
                     let cyclomaticComplexity = 0;
                     let parameters = 0;
                     let statements = 0;
+                    //let halsteadBugs = 0;
 
                     if (qualityData.functions.length > 0) {
                         for (let j = 0; j < qualityData.functions.length; j++) {
@@ -39,6 +50,8 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                         }
                     }
 
+                    //halsteadBugs = resultEscomplex.aggregate.halstead.bugs;
+
                     qualityKeyValueArray.push({
                             '_key': fileArray[i]._key,
                             'commitId': fileArray[i].commitId,
@@ -46,10 +59,22 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                             'lines_of_code': sloc(fileArray[i].fileContent, 'js').total,
                             'parameters': parameters,
                             'statements' : statements,
+                            //'halstead_bugs' : halsteadBugs,
                             'isUpdatedWithQualityMetrics':1
                         }
                     );
                 }
+
+
+                //TODO write content to file in tmp folder
+                //TODO analyze
+                //TODO delete tmp file
+
+                //fs.writeFile('tmp/mynewfile3.js', 'Hello content!', function (err) {
+                //    if (err) throw err;
+                //    console.log('Saved!');
+                //});
+
             }
         }
 

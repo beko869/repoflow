@@ -23,6 +23,7 @@ export class OptionsPanelValuesService {
     private moduleFileData: string[] = [];
     private qualityColorList: any;
     private fileNameForFileTrigger: string;
+    private yAxisZoom: boolean = false;
 
 
     public setIsFileInfo( paraValue: boolean ){
@@ -261,5 +262,14 @@ export class OptionsPanelValuesService {
                 return this.selectedFileList[i].checked;
             }
         }
+    }
+
+
+    public setYAxisZoom( paraYAxisZoom: boolean ) {
+        this.yAxisZoom = paraYAxisZoom;
+    }
+
+    public getYAxisZoom() {
+        return this.yAxisZoom;
     }
 }

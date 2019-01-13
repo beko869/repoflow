@@ -16,37 +16,6 @@ router.get('/', (req, res, next)=>{
     res.send('giving me parameters you must!');
 });
 
-router.put('/test', (req,res,next)=>{
-    console.log('test');
-    nodegitKit.open('C:/Users/benja/Desktop/test/.git')
-        .then((repo) => {
-            console.log(repo);
-
-            nodegit.Commit.lookup(repo, 'a48052fbafa49e212ff9191bb95fc5df62f3c15b')
-                .then((commit) => {
-                    commit.getEntry('raphael.js')
-                        .then((entry) => {
-                            console.log(entry);
-                            entry.getBlob().then((blob) => {
-                                console.log(String(blob));
-
-                                arangoDatabaseConnection.query(
-                                    `UPDATE  
-                                                                @key
-                                                             WITH {
-                                                                fileContent: @fileContent}
-                                                             IN 
-                                                                file`, {
-                                        key: '8798718',
-                                        fileContent: String(blob)
-                                    });
-                                //}
-                            });
-                        });
-                });
-        });
-});
-
 /* PUT (for idempotence) repository data in db. */
 router.put('/database', (req, res, next)=>{
     helper.truncateDatabase()
@@ -283,8 +252,6 @@ router.put('/quality', (req,res,next)=>{
     //DEMONSTRATION
     if( req.body.compute_js_metrics == 1 )
     {
-        //console.log
-
         //Demonstration mit JSHint
         helper.selectSHAFileArray()
             .then( ( shaFileArray ) => {

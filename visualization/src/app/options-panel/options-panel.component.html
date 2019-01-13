@@ -1,5 +1,5 @@
 <div class="filter-area">
-  <div class="search-input-group" style="margin-bottom:10px;">
+  <div class="search-input-group" style="margin-bottom:20px;">
     <label style="text-align:center;">Set and display quality metric for your project</label>
     <select2 [data]="getQualityMetricListForSelect()"
              [options]="getSelectLayoutOptions()"
@@ -14,12 +14,14 @@
     </div>-->
   </div>
   <div class="search-input-group" style="margin-bottom:30px;">
-    <div class="button" (click)="showCommitView()">Show commits only</div>
-    <div class="button" (click)="showFileView()">Show files only</div>
-    <div class="button" (click)="showFileAndCommmitViews()">Show commits and files</div>
+    <label style="text-align:center;">Set visibility options</label>
+    <div class="button" (click)="showCommitView()" [ngClass]="{visibilityButtonActive: showCommitButtonActive==true}">Show commits only</div>
+    <div class="button" (click)="showFileView()" [ngClass]="{visibilityButtonActive: showFileButtonActive==true}">Show files only</div>
+    <div class="button" (click)="showFileAndCommmitViews()" [ngClass]="{visibilityButtonActive: showFileAndCommitButtonActive==true}">Show commits and files</div>
     <div></div>
-    <div class="button" (click)="fadeFileView()">Fade files</div>
-    <div class="button" (click)="fadeCommitView()">Fade commits</div>
+    <div class="button" (click)="fadeFileView()" [ngClass]="{visibilityButtonActive: fadeFileButtonActive==true}">Fade files</div>
+    <div class="button" (click)="fadeCommitView()" [ngClass]="{visibilityButtonActive: fadeCommitButtonActive==true}">Fade commits</div>
+    <!--<div class="button" (click)="toggleYAxisZoom()">Toogle Y-Axis Zoom</div>-->
     <!--<div class="button" (click)="clearCommmitView()">Clear commits</div>-->
   </div>
 
@@ -37,7 +39,7 @@
       The tab <strong>'Compare file versions'</strong> allows you to compare file versions by clicking on a file node in the trend area.
       After that you have to click 'Fixate revision of first file'
       and choose a second file in the trend area. Clicking 'Show File Difference View' opens a diff view of the two selected file versions.<br/><br/>
-      The tab <strong>'Wrap files to modules'</strong> allows to drag and drop files from the selected file list into an
+      The tab <strong>'Group files to modules'</strong> allows to drag and drop files from the selected file list into an
       area where
     </div>
     <div class="app-modal-footer">
@@ -67,7 +69,7 @@
       <mat-tab label="Compare file versions">
         <app-diff-panel #diffPanel></app-diff-panel>
       </mat-tab>
-      <mat-tab label="Wrap files to modules">
+      <mat-tab label="Group files to modules">
         <div class="search-input-group">
           <div id="module-holder" dnd-droppable (onDropSuccess)="emitAddFileToModuleWrapperEvent($event.dragData)">
             <div class="module-file-dropzone" [hidden]="getModuleFileData().length > 0"><i>Drop files that you want to wrap in a module here!</i></div>

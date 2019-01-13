@@ -40,6 +40,7 @@ export class TrendChartComponent implements OnInit {
     private renderedXAxis: any;
     private renderedYAxis: any;
     private xScaleZoomed: any;
+    private yScaleZoomed: any;
     private trendVisualizationWrapper: any;
     private tooltip: any;
     private fileColorLookupArray: any;
@@ -66,6 +67,7 @@ export class TrendChartComponent implements OnInit {
         this.isFileDetailViewVisible = false;
         this.margin = {top:0, right:0, bottom:20, left:0};
         this.xScaleZoomed = null;
+        this.yScaleZoomed = null;
     }
 
     ngOnInit() {
@@ -343,44 +345,84 @@ export class TrendChartComponent implements OnInit {
             .append("g")
             .call(this.xAxis);
 
-            this.trendVisualizationWrapper.call( d3Zoom.zoom().on("zoom", ()=>{
+        this.trendVisualizationWrapper.call( d3Zoom.zoom().on("zoom", ()=>{
 
-                //format x-axis to display hours and minutes at a specific scaling threshold
-                if( d3Selection.event.transform.k > 7 ){
-                    this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m. %H:%M"));
-                } else {
-                    this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m.%Y"));
-                }
+            //format x-axis to display hours and minutes at a specific scaling threshold
+            if( d3Selection.event.transform.k > 7 ){
+                this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m. %H:%M"));
+            } else {
+                this.xAxis = d3Axis.axisBottom(this.xScale).tickFormat(d3TimeFormat.timeFormat("%d.%m.%Y"));
+            }
 
-                this.xScaleZoomed = d3Selection.event.transform.rescaleX( this.xScale );
-                this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
+            this.xScaleZoomed = d3Selection.event.transform.rescaleX( this.xScale );
+            this.renderedXAxis.call( this.xAxis.scale(this.xScaleZoomed) );
 
-                const line = d3Shape.line()
-                    .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ? d[ 'x' ] : 0 ) })
-                    .y((d)=>{ return this.yScale( d[ 'y' ] ? d[ 'y' ] :  0 ) })
-                    .curve(d3Shape.curveMonotoneX);
-
-                //scale file stuff to zoom scale
-                this.trendVisualizationWrapper.selectAll(".file-view-node")
-                    .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".file-view-node-icon")
-                    .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".file-view-link")
-                    .attr( "d", line );
+            //TODO if y scaling active
+            //if( this.optionsPanelValueService.getYAxisZoom() ) {
+            //    this.yScaleZoomed = d3Selection.event.transform.rescaleY( this.yScale );
+            //    this.renderedYAxis.call( this.yAxis.scale(this.yScaleZoomed) );
+            //}
+            //else {
+            //    this.yScaleZoomed = this.yScale;
+            //    //this.renderedYAxis.call( this.yAxis.scale(this.yScaleZoomed) );
+            //}
 
 
-                //scale commit stuff to zoom scale
-                this.trendVisualizationWrapper.selectAll(".commit-view-node")
-                    .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
-                    .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
-                    .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+            const line = d3Shape.line()
+                .x((d)=>{ return this.xScaleZoomed( d[ 'x' ] ? d[ 'x' ] : 0 ); })
+                .y((d)=>{return this.yScale( d[ 'y' ] ? d[ 'y' ] :  0 ); })
+                .curve(d3Shape.curveMonotoneX);
 
-                //scale module stuff to zoom scale
-                this.trendVisualizationWrapper.selectAll(".module-view-node")
-                    .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
-                this.trendVisualizationWrapper.selectAll(".module-view-link")
-                    .attr( "d", line );
+            //let that = this;
+
+            //scale file stuff to zoom scale
+            this.trendVisualizationWrapper.selectAll(".file-view-node")
+                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } )
+                /*.attr( "cy", function(d){
+                    let qualityIdentifier = that.optionsPanelValueService.getQualityMetricSelectValue();
+
+                    let retValue = that.apiService.getMinMaxOfMetric( qualityIdentifier )
+                        .subscribe(
+                            (callResult)=>{
+                                that.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
+                                that.normalizationMinValue = callResult.min_max_values[0].min;
+                            },
+                            (error)=>{
+                                console.log(error);
+                            },
+                            ()=>{
+                                let qualityValue = 0;
+                                if( d.f.status != 'deleted' ){
+                                    qualityValue = that.getNormalizedValue( d.f[ qualityIdentifier ] );
+                                }
+
+                                if( qualityValue ){
+                                    return that.yScaleZoomed( qualityValue );
+                                } else {
+                                    return that.yScaleZoomed( 0 );
+                                }
+                            });
+
+                    console.log('xxx',retValue);
+                });*/
+            this.trendVisualizationWrapper.selectAll(".file-view-node-icon")
+                .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
+            this.trendVisualizationWrapper.selectAll(".file-view-link")
+                .attr( "d", line );
+
+
+            //scale commit stuff to zoom scale
+            this.trendVisualizationWrapper.selectAll(".commit-view-node")
+                .attr( "x", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+            this.trendVisualizationWrapper.selectAll(".commit-view-balloon-line")
+                .attr( "x1", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } )
+                .attr( "x2", (d)=>{ return this.xScaleZoomed( new Date(d.datetime) ) } );
+
+            //scale module stuff to zoom scale
+            this.trendVisualizationWrapper.selectAll(".module-view-node")
+                .attr( "cx", (d)=>{ return this.xScaleZoomed( new Date(d.c.datetime) ) } );
+            this.trendVisualizationWrapper.selectAll(".module-view-link")
+                .attr( "d", line );
 
         } ) );
     }
@@ -464,7 +506,8 @@ export class TrendChartComponent implements OnInit {
                                             "value": d[paraQualityMetric] + " " + this.optionsPanelValueService.lookupQualityNameForKey( paraQualityMetric ),
                                             "sha": d.id,
                                             "time": moment(d.datetime).format('MMMM Do YYYY, HH:mm:ss'),
-                                            "filecount": d.fileCount
+                                            "filecount": d.fileCount,
+                                            "author":d.author
                                         });
                                         this.optionsPanel.ref.markForCheck();
 
@@ -512,7 +555,8 @@ export class TrendChartComponent implements OnInit {
                                 "filename":'-',
                                 "value": '-',
                                 "sha":'-',
-                                "time":'-'
+                                "time":'-',
+                                "author":'-'
                             } );
 
                         });
@@ -824,10 +868,15 @@ export class TrendChartComponent implements OnInit {
                                     "filename":d.f.name,
                                     "value": d.f[qualityIdentifier] + " " + that.qualityLabelLookupArray[qualityIdentifier],
                                     "sha":d.f.commitId,
-                                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ),
+                                    "author": d.c.author
                                 } );
                                 that.optionsPanel.ref.markForCheck();
                                 //let coords = d3Selection.mouse(this);
+
+                                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
+                                    .attr("stroke", 'yellow')
+                                    .attr("stroke-width", 2);
 
                                 that.apiService.getMinMaxOfMetric( qualityIdentifier )
                                     .subscribe(
@@ -876,11 +925,18 @@ export class TrendChartComponent implements OnInit {
                                 d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
                                 d3Selection.selectAll( ".file-view-node:not(.left-fixated-file-node):not(.right-fixated-file-node)" ).transition().duration(400).attr('r',12);
 
+                                let fileName = d.f.name.split("/").join("").split(".").join("");
+
+                                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
+                                    .attr("stroke", this.fileColorLookupArray[d.f.name].color )
+                                    .attr("stroke-width", 2);
+
                                 that.optionsPanelValueService.setInfo( {
                                     "filename":'-',
                                     "value": '-',
                                     "sha":'-',
-                                    "time":'-'
+                                    "time":'-',
+                                    "author":'-'
                                 } );
                             });
 
@@ -916,11 +972,11 @@ export class TrendChartComponent implements OnInit {
                 ()=>{
                     //d3 line generator
                     const line = d3Shape.line()
-                        .x((d)=>{ console.log(d['x']);
+                        .x((d)=>{
                             let xCoord = d[ 'x' ] ? d[ 'x' ] : 0;
                             return currentXScale( xCoord )
                         })
-                        .y((d)=>{ console.log(d['y']);
+                        .y((d)=>{
                             let yCoord = d[ 'y' ] ? d[ 'y' ] : 0;
                             return this.yScale( yCoord );
                         })
@@ -1017,7 +1073,8 @@ export class TrendChartComponent implements OnInit {
                                 "filename":d.f.name,
                                 "value": d.f[this.optionsPanelValueService.getQualityMetricSelectValue()] + " " + this.optionsPanelValueService.getQualityMetricSelectValue(),
                                 "sha":d.f.commitId,
-                                "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )
+                                "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ),
+                                "author":d.c.author
                             } );
                             this.optionsPanel.ref.markForCheck();
 
@@ -1065,7 +1122,8 @@ export class TrendChartComponent implements OnInit {
                     "filename":'-',
                     "value": '-',
                     "sha":'-',
-                    "time":'-'
+                    "time":'-',
+                    "author":'-'
                 } );
             });
     }
@@ -1318,6 +1376,8 @@ export class TrendChartComponent implements OnInit {
                     title: 'Compare this trend line to ' + qualityList[i].text,
                     action: () => {
                         this.doFileViewRequestByFilePathAndRender(filename, qualityList[i].id);
+                        this.optionsPanel.triggerButtonVisibility( false, false, false, false, true );
+                        this.optionsPanel.ref.markForCheck();
                     }
                 });
             }
@@ -1383,6 +1443,8 @@ export class TrendChartComponent implements OnInit {
                     title: 'Compare this commit quality trend to ' + qualityList[i].text,
                     action: () => {
                         this.doCommitViewRequestAndRender(qualityList[i].id);
+                        this.optionsPanel.triggerButtonVisibility( false, false, false, true, false );
+                        this.optionsPanel.ref.markForCheck();
                     }
                 });
             }
@@ -1456,7 +1518,7 @@ export class TrendChartComponent implements OnInit {
         d3Selection.selectAll('.file-view-link.' + fileName.split("/").join("").split(".").join("") ).transition().duration(700).attr("visibility", 'default');
         d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") + '.deleted' ).transition().duration(700).attr("visibility", function(d){
             let nodeIcon = d3Selection.select(this);
-            console.log(nodeIcon.attr('data-status'));
+            //console.log(nodeIcon.attr('data-status'));
             if( nodeIcon.attr('data-status') == 'deleted' ){
                 return 'default'
             } else {
@@ -1465,7 +1527,7 @@ export class TrendChartComponent implements OnInit {
         });
         d3Selection.selectAll('.file-view-node-icon.' + fileName.split("/").join("").split(".").join("") + '.added' ).transition().duration(700).attr("visibility", function(d){
             let nodeIcon = d3Selection.select(this);
-            console.log(nodeIcon.attr('data-status'));
+            //console.log(nodeIcon.attr('data-status'));
 
             if( nodeIcon.attr('data-status') == 'added' ){
                 return 'default'
