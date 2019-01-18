@@ -57,6 +57,38 @@ router.get('/initial_data', (req, res, next) => {
     });
 });
 
+router.get('/normalization_values', (req, res, next) => {
+    arangoDatabaseConnection.query("FOR qm IN quality_metric RETURN qm").then((values) => {
+        let promiseArray = [];
+
+        for( let i = 0; i<values._result.length; i++ ) {
+
+            promiseArray.push( arangoDatabaseConnection
+                .query("FOR f IN file COLLECT AGGREGATE min = MIN( f." + values._result[i].key + " ), max = MAX( f." + values._result[i].key + " ) RETURN { min, max }")
+                .then((minMaxValues) => {
+                    console.log(minMaxValues);
+                    return {
+                        'quality_key':values._result[i].key,
+                        'min':minMaxValues._result[0].min,
+                        'max':minMaxValues._result[0].max };
+                })
+            );
+        }
+
+        return Promise.all( promiseArray )
+
+    }).then( (normalizationResult) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.send(JSON.stringify(
+            {
+                "normalization-values": normalizationResult
+            }
+        ));
+    } );
+
+});
+
 /* GET commit data */
 router.get('/commit_data', (req, res, next) => {
     arangoDatabaseConnection
@@ -65,7 +97,6 @@ router.get('/commit_data', (req, res, next) => {
             if( req.query.metric != '' && req.query.metric != undefined && req.query.metric != null ) {
                 arangoDatabaseConnection.query("FOR f IN file COLLECT AGGREGATE min = MIN( f." + req.query.metric + " ), max = MAX( f." + req.query.metric + " ) RETURN { min, max }")
                     .then((minMaxValues) => {
-                        console.log(minMaxValues);
 
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Access-Control-Allow-Origin', '*');

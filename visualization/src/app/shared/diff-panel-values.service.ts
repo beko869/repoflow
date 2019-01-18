@@ -7,8 +7,8 @@ import {UtilityService} from "./utility.service";
  */
 export class DiffPanelValuesService {
 
-    private leftFileData: any = { fileName:'N/A', sha:'N/A' };
-    private rightFileData: any = { fileName:'N/A', sha:'N/A' };
+    private leftFileData: any = { fileName:'N/A', sha:'N/A', date:'N/A' };
+    private rightFileData: any = { fileName:'N/A', sha:'N/A', date:'N/A' };
 
     private leftFileFixated: boolean = false;
     private rightFileFixated: boolean = false;

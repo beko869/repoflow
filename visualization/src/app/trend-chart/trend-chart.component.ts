@@ -49,6 +49,7 @@ export class TrendChartComponent implements OnInit {
     private isFileDetailViewVisible: boolean;
     private diffPanel: any;
     private contextMenu: any;
+    private normalizationValuesIndex: any;
 
 
     public optionsPanel : OptionsPanelComponent;
@@ -86,6 +87,13 @@ export class TrendChartComponent implements OnInit {
                 this.renderAxis();
                 this.initOptionsPanel( data["file-names"], this.fileColorLookupArray, data["quality-metrics"], this.qualityColorLookupArray );
                 this.initGridLines();
+
+                this.apiService.getMinMaxIndexData()
+                    .subscribe((data)=>{
+                        this.normalizationValuesIndex = this.utility.createNormalizationLookupArray(data['normalization-values']);
+
+                        console.log(this.normalizationValuesIndex);
+                    });
 
                 // add the X gridlines
                 /*this.trendVisualizationWrapper.append("g")
@@ -671,276 +679,262 @@ export class TrendChartComponent implements OnInit {
         //if paraQuality is set, use it, else use the selected quality identifier from the dropdown
         let qualityIdentifier = paraQuality ? paraQuality : this.optionsPanelValueService.getQualityMetricSelectValue();
 
-        this.apiService.getMinMaxOfMetric( qualityIdentifier )
-            .subscribe(
-                (callResult)=>{
-                        this.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
-                        this.normalizationMinValue = callResult.min_max_values[0].min;
-                    },
-                    (error)=>{
-                        console.log(error);
-                    },
-                    ()=>{
-                        //console.log(qualityIdentifier);
-                        //console.log( this.normalizationQuotient );
-                        //console.log( this.normalizationMinValue );
-
-                        //remove if we already have a trend path for this filename
-                        for( let i = 0; i<paraFileNodesData.length; i++ ){
-                            let tmpFileName = paraFileNodesData[i].f.name;
-                            this.clearFileView(tmpFileName, qualityIdentifier);
-                        }
-
-                        //add main dot to fileview nodes
-                        let currentNode = this.trendVisualizationWrapper.append('g').selectAll('rect')
-                            .data(paraFileNodesData)
-                            .enter()
-                            .append('circle')
-                            .attr('class', (d)=>{
-                                return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
-                            })
-                            .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
-                            .attr('cy', (d)=>{
-                                let qualityValue = 0;
-                                if( d.f.status != 'deleted' ){
-                                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
-                                }
-
-                                if( qualityValue ){
-                                    return this.yScale( qualityValue );
-                                } else {
-                                    return this.yScale( 0 );
-                                }
-
-                            })
-                            .attr('data-qualityidentifier', qualityIdentifier)
-                            .attr('data-qualityvalue', (d)=>{ return d.f[ qualityIdentifier ] })
-                            .style('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
-                            .style('fill-opacity', 0.3)
-                            .style('stroke',(d)=>{ return this.fileColorLookupArray[d.f.name].color })
-                            .style('stroke-width', 2 )
-                            .style('stroke-opacity', 1 )
-                            .attr('r', 12)
-                            .attr('visibility', (d)=>{
-                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ){
-                                    return 'default'; }
-                                else {
-                                    return 'hidden';
-                                }
-                            });
+        this.normalizationQuotient = this.normalizationValuesIndex[qualityIdentifier].max - this.normalizationValuesIndex[qualityIdentifier].min;
+        this.normalizationMinValue = this.normalizationValuesIndex[qualityIdentifier].min;
 
 
-                        this.trendVisualizationWrapper.append('g').selectAll('text')
-                            .data(paraFileNodesData)
-                            .enter()
-                            .append('text')
-                            .attr('class', (d)=>{
-                                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
-                            })
-                            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
-                            .attr('y', (d)=>{
-                                let qualityValue = 0;
-                                if( d.f.status != 'deleted' ){
-                                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
-                                }
-                                return this.yScale( qualityValue );
+        //console.log(qualityIdentifier);
+        //console.log( this.normalizationQuotient );
+        //console.log( this.normalizationMinValue );
 
-                            }).attr('font-family', 'FontAwesome')
-                            .attr('text-anchor', 'middle')
-                            .attr('dominant-baseline', 'central')
-                            .attr('fill','darkred')
-                            .attr('font-size', function(d) { return '17px'} )
-                            .attr("pointer-events", "none")
-                            .attr('visibility', (d)=>{
-                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
-                                    return (d.f.status == 'deleted' ? 'default' : 'hidden');
-                                }
-                                else {
-                                    return 'hidden';
-                                }
-                            })
-                            .attr('data-status', (d)=>{
-                                return 'deleted';
-                            })
-                            .text(function(d) { return '\uf1f8'});
+        //remove if we already have a trend path for this filename
+        for( let i = 0; i<paraFileNodesData.length; i++ ){
+            let tmpFileName = paraFileNodesData[i].f.name;
+            this.clearFileView(tmpFileName, qualityIdentifier);
+        }
 
+        //add main dot to fileview nodes
+        let currentNode = this.trendVisualizationWrapper.append('g').selectAll('rect')
+            .data(paraFileNodesData)
+            .enter()
+            .append('circle')
+            .attr('class', (d)=>{
+                return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+            })
+            .attr('cx', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+            .attr('cy', (d)=>{
+                let qualityValue = 0;
+                if( d.f.status != 'deleted' ){
+                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
+                }
 
-                        this.trendVisualizationWrapper.append('g').selectAll('text')
-                            .data(paraFileNodesData)
-                            .enter()
-                            .append('text')
-                            .attr('class', (d)=>{
-                                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
-                            })
-                            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
-                            .attr('y', (d)=>{
-                                let qualityValue = 0;
-                                if( d.f.status != 'deleted' ){
-                                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
-                                }
-                                return this.yScale( qualityValue );
+                if( qualityValue ){
+                    return this.yScale( qualityValue );
+                } else {
+                    return this.yScale( 0 );
+                }
 
-                            }).attr('font-family', 'FontAwesome')
-                            .attr('text-anchor', 'middle')
-                            .attr('dominant-baseline', 'central')
-                            .attr('fill','darkgreen')
-                            .attr('font-size', function(d) { return '17px'} )
-                            .attr("pointer-events", "none")
-                            .attr('visibility', (d)=>{
-                                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
-                                    return (d.f.status == 'added' ? 'default' : 'hidden');
-                                }
-                                else {
-                                    return 'hidden';
-                                }
-                            })
-                            .attr('data-status', (d)=>{
-                                return 'added';
-                            })
-                            .text(function(d) { return '\uf0c7'});
-
-                        currentNode.on('contextmenu', function(d) {
-                                d3Selection.select('.context-menu-item').remove();
-                                that.contextMenu = that.getContextMenuForFileViewNode( d, qualityIdentifier );
-                                let coords = d3Selection.mouse(this);
-
-                                that.contextMenu.attr('transform', 'translate(' + coords[0] + ',' + coords[1] + ')');
-                                that.contextMenu.style('display', 'block');
-                                that.contextMenu.datum(d);
-
-                                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
-
-                                d3Selection.event.preventDefault();
-                            });
-
-                        currentNode.on("click", function(d) {
+            })
+            .attr('data-qualityidentifier', qualityIdentifier)
+            .attr('data-qualityvalue', (d)=>{ return d.f[ qualityIdentifier ] })
+            .style('fill', (d)=>{ return this.fileColorLookupArray[d.f.name].color })
+            .style('fill-opacity', 0.3)
+            .style('stroke',(d)=>{ return this.fileColorLookupArray[d.f.name].color })
+            .style('stroke-width', 2 )
+            .style('stroke-opacity', 1 )
+            .attr('r', 12)
+            .attr('visibility', (d)=>{
+                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ){
+                    return 'default'; }
+                else {
+                    return 'hidden';
+                }
+            });
 
 
-                            let qualityLabel = that.qualityLabelLookupArray[qualityIdentifier];
-                            let qualityValue = d.f[qualityIdentifier];
-                            let qualityColor = that.qualityColorLookupArray[qualityIdentifier];
+        this.trendVisualizationWrapper.append('g').selectAll('text')
+            .data(paraFileNodesData)
+            .enter()
+            .append('text')
+            .attr('class', (d)=>{
+                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+            })
+            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+            .attr('y', (d)=>{
+                let qualityValue = 0;
+                if( d.f.status != 'deleted' ){
+                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
+                }
+                return this.yScale( qualityValue );
 
-                            that.diffPanelValueService.setFileName( d.f.name )
-                            that.diffPanelValueService.setQualityColor( qualityColor );
+            }).attr('font-family', 'FontAwesome')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('fill','darkred')
+            .attr('font-size', function(d) { return '17px'} )
+            .attr("pointer-events", "none")
+            .attr('visibility', (d)=>{
+                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
+                    return (d.f.status == 'deleted' ? 'default' : 'hidden');
+                }
+                else {
+                    return 'hidden';
+                }
+            })
+            .attr('data-status', (d)=>{
+                return 'deleted';
+            })
+            .text(function(d) { return '\uf1f8'});
 
-                            if( that.diffPanel.getLeftFileFixated() ) {
-                                that.diffPanelValueService.setRightContent( d.f.fileContent )
 
-                                that.diffPanelValueService.setRightQualityLabel( qualityLabel );
-                                that.diffPanelValueService.setRightQualityValue( qualityValue );
+        this.trendVisualizationWrapper.append('g').selectAll('text')
+            .data(paraFileNodesData)
+            .enter()
+            .append('text')
+            .attr('class', (d)=>{
+                return 'file-view-node-icon '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier + ' ' + d.f.status
+            })
+            .attr('x', (d)=>{ return currentXScale( new Date(d.c.datetime) ) })
+            .attr('y', (d)=>{
+                let qualityValue = 0;
+                if( d.f.status != 'deleted' ){
+                    qualityValue = this.getNormalizedValue( d.f[ qualityIdentifier ] );
+                }
+                return this.yScale( qualityValue );
 
-                                that.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId} )
+            }).attr('font-family', 'FontAwesome')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('fill','darkgreen')
+            .attr('font-size', function(d) { return '17px'} )
+            .attr("pointer-events", "none")
+            .attr('visibility', (d)=>{
+                if( that.optionsPanelValueService.getVisibilityByFileName( d.f.name ) ) {
+                    return (d.f.status == 'added' ? 'default' : 'hidden');
+                }
+                else {
+                    return 'hidden';
+                }
+            })
+            .attr('data-status', (d)=>{
+                return 'added';
+            })
+            .text(function(d) { return '\uf0c7'});
 
-                                d3Selection.select('.right-fixated-file-node')
-                                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
-                                    .attr('r',12)
-                                    ;
+        currentNode.on('contextmenu', function(d) {
+                d3Selection.select('.context-menu-item').remove();
+                that.contextMenu = that.getContextMenuForFileViewNode( d, qualityIdentifier );
+                let coords = d3Selection.mouse(this);
 
-                                d3Selection.select(this)
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
-                                    .attr('r',15)
-                                    ;
-                            }
-                            else {
-                                that.diffPanelValueService.setLeftContent( d.f.fileContent )
-                                that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId} );
+                that.contextMenu.attr('transform', 'translate(' + coords[0] + ',' + coords[1] + ')');
+                that.contextMenu.style('display', 'block');
+                that.contextMenu.datum(d);
 
-                                that.diffPanelValueService.setLeftQualityLabel( qualityLabel );
-                                that.diffPanelValueService.setLeftQualityValue( qualityValue );
+                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
 
-                                d3Selection.select('.left-fixated-file-node')
-                                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
-                                    .attr('r',12);
+                d3Selection.event.preventDefault();
+            });
 
-                                d3Selection.select(this)
-                                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
-                                    .attr('r',15);
+        currentNode.on("click", function(d) {
 
-                            }
 
-                            d3Selection.event.stopPropagation();
+            let qualityLabel = that.qualityLabelLookupArray[qualityIdentifier];
+            let qualityValue = d.f[qualityIdentifier];
+            let qualityColor = that.qualityColorLookupArray[qualityIdentifier];
 
-                            //this.showFileDetailView( d.f.fileContent );
-                        })
-                            .on("mouseover", function(d){
-                                let fileName = d.f.name.split("/").join("").split(".").join("");
-                                that.optionsPanelValueService.setInfo( {
-                                    "filename":d.f.name,
-                                    "value": d.f[qualityIdentifier] + " " + that.qualityLabelLookupArray[qualityIdentifier],
-                                    "sha":d.f.commitId,
-                                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ),
-                                    "author": d.c.author
-                                } );
-                                that.optionsPanel.ref.markForCheck();
-                                //let coords = d3Selection.mouse(this);
+            that.diffPanelValueService.setFileName( d.f.name )
+            that.diffPanelValueService.setQualityColor( qualityColor );
 
-                                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
-                                    .attr("stroke", 'yellow')
-                                    .attr("stroke-width", 2);
+            if( that.diffPanel.getLeftFileFixated() ) {
+                that.diffPanelValueService.setRightContent( d.f.fileContent )
 
-                                that.apiService.getMinMaxOfMetric( qualityIdentifier )
-                                    .subscribe(
-                                        (callResult)=>{
-                                            that.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
-                                            that.normalizationMinValue = callResult.min_max_values[0].min;
-                                        },
-                                        (error)=>{
-                                            console.log(error);
-                                        },
-                                        ()=>{
-                                            that.renderDashedGuideLineToXAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
-                                            that.renderDashedGuideLineToYAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
-                                            that.trendVisualizationWrapper
-                                            .selectAll( ".file-view-node."+fileName+".sha" + d.f.commitId ).transition().duration(500).attr('r',20)
-                                            .each(function(d){
-                                                let currentNode = d3Selection.select(this);
-                                                let currentY = currentNode.attr('cy');
-                                                let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
-                                                let currentQualityValue = currentNode.attr('data-qualityvalue');
-                                                let xScaleForNode = that.getCurrentXScale();
+                that.diffPanelValueService.setRightQualityLabel( qualityLabel );
+                that.diffPanelValueService.setRightQualityValue( qualityValue );
 
-                                                let tooltipContainer = that.trendVisualizationWrapper
-                                                    .append('g')
-                                                    .attr('class','file-view-node-tooltip')
-                                                    .attr('transform', 'translate(' + (xScaleForNode( new Date(d.c.datetime) ) + 15 ) + ',' + currentY + ')' );
+                that.diffPanel.setRightFileData( {fileName:d.f.name,sha:d.f.commitId,date:moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )} )
 
-                                                tooltipContainer
-                                                    .append('rect')
-                                                    .attr('width',250)
-                                                    .attr('height',25)
-                                                    .attr('fill','#eee');
+                d3Selection.select('.right-fixated-file-node')
+                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
+                    .attr('r',12)
+                    ;
 
-                                                tooltipContainer
-                                                    .append('text')
-                                                    .style('fill','black')
-                                                    .attr('transform', 'translate(0,18)' )
-                                                    .text( 'File: ' + parseFloat(currentQualityValue).toFixed(2) + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+                d3Selection.select(this)
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
+                    .attr('r',15)
+                    ;
+            }
+            else {
+                that.diffPanelValueService.setLeftContent( d.f.fileContent )
+                that.diffPanel.setLeftFileData( {fileName:d.f.name,sha:d.f.commitId,date:moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' )} );
 
-                                                that.fadeInD3Element( tooltipContainer );
-                                            })
-                                        });
-                            })
-                            .on("mouseout", (d)=>{
-                                this.removeDashedGuideLines();
-                                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
-                                d3Selection.selectAll( ".file-view-node:not(.left-fixated-file-node):not(.right-fixated-file-node)" ).transition().duration(400).attr('r',12);
+                that.diffPanelValueService.setLeftQualityLabel( qualityLabel );
+                that.diffPanelValueService.setLeftQualityValue( qualityValue );
 
-                                let fileName = d.f.name.split("/").join("").split(".").join("");
+                d3Selection.select('.left-fixated-file-node')
+                    .attr('class', (d)=>{ return 'file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' sha' + d.f.commitId + ' ' + qualityIdentifier} )
+                    .attr('r',12);
 
-                                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
-                                    .attr("stroke", this.fileColorLookupArray[d.f.name].color )
-                                    .attr("stroke-width", 2);
+                d3Selection.select(this)
+                    .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
+                    .attr('r',15);
 
-                                that.optionsPanelValueService.setInfo( {
-                                    "filename":'-',
-                                    "value": '-',
-                                    "sha":'-',
-                                    "time":'-',
-                                    "author":'-'
-                                } );
-                            });
+            }
 
-                    });
+            d3Selection.event.stopPropagation();
+
+            //this.showFileDetailView( d.f.fileContent );
+        })
+            .on("mouseover", function(d){
+                let fileName = d.f.name.split("/").join("").split(".").join("");
+                that.optionsPanelValueService.setInfo( {
+                    "filename":d.f.name,
+                    "value": d.f[qualityIdentifier] + " " + that.qualityLabelLookupArray[qualityIdentifier],
+                    "sha":d.f.commitId,
+                    "time":moment( d.c.datetime ).format( 'MMMM Do YYYY, HH:mm:ss' ),
+                    "author": d.c.author
+                } );
+                that.optionsPanel.ref.markForCheck();
+                //let coords = d3Selection.mouse(this);
+
+                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
+                    .attr("stroke", 'yellow')
+                    .attr("stroke-width", 2);
+
+                that.normalizationQuotient = that.normalizationValuesIndex[qualityIdentifier].max - that.normalizationValuesIndex[qualityIdentifier].min;
+                that.normalizationMinValue = that.normalizationValuesIndex[qualityIdentifier].min;
+
+                that.renderDashedGuideLineToXAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
+                that.renderDashedGuideLineToYAxis( new Date(d.c.datetime), that.getNormalizedValue( d.f[ qualityIdentifier ] ) );
+                that.trendVisualizationWrapper
+                .selectAll( ".file-view-node."+fileName+".sha" + d.f.commitId ).transition().duration(500).attr('r',20)
+                .each(function(d){
+                    let currentNode = d3Selection.select(this);
+                    let currentY = currentNode.attr('cy');
+                    let currentQualityIdentifier = currentNode.attr('data-qualityidentifier');
+                    let currentQualityValue = currentNode.attr('data-qualityvalue');
+                    let xScaleForNode = that.getCurrentXScale();
+
+                    let tooltipContainer = that.trendVisualizationWrapper
+                        .append('g')
+                        .attr('class','file-view-node-tooltip')
+                        .attr('transform', 'translate(' + (xScaleForNode( new Date(d.c.datetime) ) + 15 ) + ',' + currentY + ')' );
+
+                    tooltipContainer
+                        .append('rect')
+                        .attr('width',250)
+                        .attr('height',25)
+                        .attr('fill','#eee');
+
+                    tooltipContainer
+                        .append('text')
+                        .style('fill','black')
+                        .attr('transform', 'translate(0,18)' )
+                        .text( 'File: ' + parseFloat(currentQualityValue).toFixed(2) + " " + that.qualityLabelLookupArray[currentQualityIdentifier]);
+
+                    that.fadeInD3Element( tooltipContainer );
+                })
+            })
+            .on("mouseout", (d)=>{
+                this.removeDashedGuideLines();
+                d3Selection.selectAll( '.file-view-node-tooltip' ).remove();
+                d3Selection.selectAll( ".file-view-node:not(.left-fixated-file-node):not(.right-fixated-file-node)" ).transition().duration(400).attr('r',12);
+
+                let fileName = d.f.name.split("/").join("").split(".").join("");
+
+                d3Selection.select( '.file-view-link.' + fileName + '.' + qualityIdentifier )
+                    .attr("stroke", this.fileColorLookupArray[d.f.name].color )
+                    .attr("stroke-width", 2);
+
+                that.optionsPanelValueService.setInfo( {
+                    "filename":'-',
+                    "value": '-',
+                    "sha":'-',
+                    "time":'-',
+                    "author":'-'
+                } );
+            });
+
+
 
         this.fadeCommitViewToBackground();
 
@@ -958,73 +952,66 @@ export class TrendChartComponent implements OnInit {
         //if paraQuality is set, use it, else use the selected quality identifier from the dropdown
         let qualityIdentifier = paraQuality ? paraQuality : this.optionsPanelValueService.getQualityMetricSelectValue();
 
+        this.normalizationQuotient = this.normalizationValuesIndex[qualityIdentifier].max - this.normalizationValuesIndex[qualityIdentifier].min;
+        this.normalizationMinValue = this.normalizationValuesIndex[qualityIdentifier].min;
+
         //erst quotient checken für normalisierung auf den achsen
         //in der complete funktion passiert dann das ganze rendering
-        this.apiService.getMinMaxOfMetric( qualityIdentifier )
-            .subscribe(
-                (callResult)=>{
-                    this.normalizationQuotient = callResult.min_max_values[0].max - callResult.min_max_values[0].min;
-                    this.normalizationMinValue = callResult.min_max_values[0].min;
-                },
-                (error)=>{
-                    console.log(error);
-                },
-                ()=>{
-                    //d3 line generator
-                    const line = d3Shape.line()
-                        .x((d)=>{
-                            let xCoord = d[ 'x' ] ? d[ 'x' ] : 0;
-                            return currentXScale( xCoord )
-                        })
-                        .y((d)=>{
-                            let yCoord = d[ 'y' ] ? d[ 'y' ] : 0;
-                            return this.yScale( yCoord );
-                        })
-                        .curve(d3Shape.curveMonotoneX);
 
-                    let fileLinkArray = [];
-                    let dateCompare = this.utility.fileDatetimeComparer;
-                    let filesSortyByCommitDatetime = paraFileLinksData.sort( dateCompare );
+        //d3 line generator
+        const line = d3Shape.line()
+            .x((d)=>{
+                let xCoord = d[ 'x' ] ? d[ 'x' ] : 0;
+                return currentXScale( xCoord )
+            })
+            .y((d)=>{
+                let yCoord = d[ 'y' ] ? d[ 'y' ] : 0;
+                return this.yScale( yCoord );
+            })
+            .curve(d3Shape.curveMonotoneX);
 
-                    filesSortyByCommitDatetime.forEach( (file)=>{
-                        let qualityValue = 0;
-                        if( file.f.status != 'deleted' ){
-                            qualityValue = this.getNormalizedValue( file.f[ qualityIdentifier ] );
-                        }
+        let fileLinkArray = [];
+        let dateCompare = this.utility.fileDatetimeComparer;
+        let filesSortyByCommitDatetime = paraFileLinksData.sort( dateCompare );
 
-                        fileLinkArray.push({
-                            "x": new Date(file.c.datetime),
-                            "y": qualityValue,
-                            "color": file.f.color,
-                            "name": file.f.name
-                        });
-                    });
+        filesSortyByCommitDatetime.forEach( (file)=>{
+            let qualityValue = 0;
+            if( file.f.status != 'deleted' ){
+                qualityValue = this.getNormalizedValue( file.f[ qualityIdentifier ] );
+            }
 
-                    this.trendVisualizationWrapper
-                        .append('path')
-                        .datum(fileLinkArray)
-                        .attr('class', (d)=>{
-                            return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") + ' ' + qualityIdentifier
-                        })
-                        .attr("fill", "none")
-                        .attr("stroke", (d)=>{
-                            return this.fileColorLookupArray[d[0].name].color;
-                        })
-                        .attr("stroke-linejoin", "round")
-                        .attr("stroke-linecap", "round")
-                        .attr("stroke-width", 3)
-                        .attr("pointer-events", "none")
-                        .attr("d", line)
-                        .attr("clip-path","url(#clipper)")
-                        .attr('visibility', (d)=>{
-                            if( this.optionsPanelValueService.getVisibilityByFileName( d[0].name ) ){
-                                return 'default'; }
-                            else {
-                                return 'hidden';
-                            }
-                        });
-                    ;
-                });
+            fileLinkArray.push({
+                "x": new Date(file.c.datetime),
+                "y": qualityValue,
+                "color": file.f.color,
+                "name": file.f.name
+            });
+        });
+
+        this.trendVisualizationWrapper
+            .append('path')
+            .datum(fileLinkArray)
+            .attr('class', (d)=>{
+                return 'file-view-link ' + d[0].name.split("/").join("").split(".").join("") + ' ' + qualityIdentifier
+            })
+            .attr("fill", "none")
+            .attr("stroke", (d)=>{
+                return this.fileColorLookupArray[d[0].name].color;
+            })
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-linecap", "round")
+            .attr("stroke-width", 3)
+            .attr("pointer-events", "none")
+            .attr("d", line)
+            .attr("clip-path","url(#clipper)")
+            .attr('visibility', (d)=>{
+                if( this.optionsPanelValueService.getVisibilityByFileName( d[0].name ) ){
+                    return 'default'; }
+                else {
+                    return 'hidden';
+                }
+            });
+
     }
 
 

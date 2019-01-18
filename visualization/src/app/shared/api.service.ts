@@ -101,4 +101,14 @@ export class ApiService {
         console.error('ApiService::handleError', error);
         return Observable.throw(error);
     }
+
+    /**
+     * get call for initial visualization data
+     * @returns {Observable<any>}
+     */
+    public getMinMaxIndexData() {
+        return this.http
+            .get(API_URL + 'get/normalization_values')
+            .catch(this.handleError);
+    }
 }
