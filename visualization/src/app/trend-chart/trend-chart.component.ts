@@ -840,7 +840,7 @@ export class TrendChartComponent implements OnInit {
 
                 d3Selection.select(this)
                     .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' right-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
-                    .attr('r',15)
+                    .attr('r',20)
                     ;
             }
             else {
@@ -856,7 +856,7 @@ export class TrendChartComponent implements OnInit {
 
                 d3Selection.select(this)
                     .attr('class','file-view-node '+ d.f.name.split("/").join("").split(".").join("") + ' left-fixated-file-node' + ' sha' + d.f.commitId + ' ' + qualityIdentifier)
-                    .attr('r',15);
+                    .attr('r',20);
 
             }
 

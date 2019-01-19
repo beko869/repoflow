@@ -20,8 +20,6 @@
         <div class="info-value">{{getLeftFileData().fileName}}</div>
         <label class="info-label">Version Date</label>
         <div class="info-value">{{getLeftFileData().date}}</div>
-        <label class="info-label">SHA</label>
-        <div class="info-value">{{getLeftFileData().sha}}</div>
         <div class="button" (click)="toggleLeftFileFixated()">
             <span *ngIf="getLeftFileFixated() && getLeftFileData().fileName != 'N/A'; else leftFileFixated" >
                 Change first revision
@@ -37,8 +35,6 @@
         <div class="info-value">{{getRightFileData().fileName}}</div>
         <label class="info-label">Version Date</label>
         <div class="info-value">{{getRightFileData().date}}</div>
-        <label class="info-label">SHA</label>
-        <div class="info-value">{{getRightFileData().sha}}</div>
         <div class="button" (click)="modal.show();codeEditor.setLeftContent();codeEditor.setRightContent()">
             Show File Difference View
         </div>

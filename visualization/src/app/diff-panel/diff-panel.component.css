@@ -1,12 +1,13 @@
 .diff-panel-holder{
     display:flex;
-    flex-direction:column;
+    flex-direction:row;
 
     padding:0 8px 0 0;
 }
 
 .file-info-holder{
-    flex-basis:20%;
+    margin-top:15px;
+    flex-basis:50%;
 }
 
 .info-label{
