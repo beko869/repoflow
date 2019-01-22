@@ -66,7 +66,7 @@ router.get('/normalization_values', (req, res, next) => {
             promiseArray.push( arangoDatabaseConnection
                 .query("FOR f IN file COLLECT AGGREGATE min = MIN( f." + values._result[i].key + " ), max = MAX( f." + values._result[i].key + " ) RETURN { min, max }")
                 .then((minMaxValues) => {
-                    console.log(minMaxValues);
+                    //console.log(minMaxValues);
                     return {
                         'quality_key':values._result[i].key,
                         'min':minMaxValues._result[0].min,
@@ -249,7 +249,7 @@ router.get('/module_data/:filenames/:metric_key', (req, res, next) => {
 
             fileNamesFilter = fileNamesFilter.slice(0,-4);
 
-            console.log(fileNamesFilter);
+            //console.log(fileNamesFilter);
 
             return arangoDatabaseConnection.query("FOR c IN commit FOR f IN file FILTER (" + fileNamesFilter + ") AND f.commitId == c.id RETURN {f,c}") //TODO join auf die color tabelle?
                 .then((result) => {
@@ -283,8 +283,8 @@ router.get('/module_data/:filenames/:metric_key', (req, res, next) => {
                                 if (currentCommitKey == tmpCommitKey) {
                                     howOftenFound++;
 
-                                    console.log(matchArray[j].f[req.params.metric_key]);
-                                    console.log(howOftenFound);
+                                    //console.log(matchArray[j].f[req.params.metric_key]);
+                                    //console.log(howOftenFound);
                                     sumedQualityValue = parseFloat( sumedQualityValue + matchArray[j].f[req.params.metric_key] );
                                     fileNames =  fileNames + matchArray[j].f.name + ",";
                                 }

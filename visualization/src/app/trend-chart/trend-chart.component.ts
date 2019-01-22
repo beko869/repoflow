@@ -92,7 +92,7 @@ export class TrendChartComponent implements OnInit {
                     .subscribe((data)=>{
                         this.normalizationValuesIndex = this.utility.createNormalizationLookupArray(data['normalization-values']);
 
-                        console.log(this.normalizationValuesIndex);
+                        //console.log(this.normalizationValuesIndex);
                     });
 
                 // add the X gridlines

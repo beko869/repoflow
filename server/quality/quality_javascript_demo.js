@@ -18,7 +18,8 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                                     {'key':'complexity','label':'Cyclomatic Complexity','file_types':['.js']},
                                     {'key':'lines_of_code','label':'Lines of Code','file_types':['.js']},
                                     {'key':'parameters','label':'Parameters','file_types':['.js']},
-                                    {'key':'statements','label':'Statements','file_types':['.js']}
+                                    {'key':'statements','label':'Statements','file_types':['.js']},
+                                    {'key':'comments','label':'Comment Lines','file_types':['.js']}
                                   ];
 
         let qualityKeyValueArray = [];
@@ -56,7 +57,8 @@ javascriptQualityDemo.computeComplexityWithJsHINT = function computeComplexityWi
                             '_key': fileArray[i]._key,
                             'commitId': fileArray[i].commitId,
                             'complexity': cyclomaticComplexity,
-                            'lines_of_code': sloc(fileArray[i].fileContent, 'js').total,
+                            'lines_of_code': sloc(fileArray[i].fileContent, 'js').source,
+                            'comments': sloc(fileArray[i].fileContent, 'js').comment,
                             'parameters': parameters,
                             'statements' : statements,
                             //'halstead_bugs' : halsteadBugs,
