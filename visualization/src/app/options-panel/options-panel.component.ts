@@ -237,7 +237,7 @@ export class OptionsPanelComponent {
         this.ref.markForCheck();
 
         if( this.getSelectedFileList().length > 0 ){
-            this.triggerButtonVisibility( false,false,false,false,true )
+            this.triggerButtonVisibility( paraTriggerCommitButtonVisibility,false,false,false,false )
 
         }
         else

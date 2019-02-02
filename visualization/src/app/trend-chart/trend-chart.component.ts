@@ -826,7 +826,7 @@ export class TrendChartComponent implements OnInit {
             that.diffPanelValueService.setQualityColor( qualityColor );
 
             if( that.diffPanel.getLeftFileFixated() ) {
-                that.diffPanelValueService.setRightContent( d.f.fileContent )
+                that.diffPanelValueService.setRightContent( d.f.fileContent );
 
                 that.diffPanelValueService.setRightQualityLabel( qualityLabel );
                 that.diffPanelValueService.setRightQualityValue( qualityValue );
