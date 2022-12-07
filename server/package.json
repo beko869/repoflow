@@ -14,7 +14,7 @@
     "debug": "~2.6.3",
     "es6-plato": "^1.0.17",
     "escomplex": "^2.0.0-alpha",
-    "express": "~4.15.2",
+    "express": "~4.17.3",
     "jade": "~1.11.0",
     "jshint": "^2.9.5",
     "morgan": "~1.8.1",
